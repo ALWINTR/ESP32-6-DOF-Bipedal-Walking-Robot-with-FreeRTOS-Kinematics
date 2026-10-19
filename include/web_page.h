@@ -465,8 +465,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <span>LIVE ANIMATED ROBOT MOVEMENT & KINEMATICS</span>
         </div>
         <div class="tab-pills">
-          <button class="tab-pill active" id="tab-btn-kinematic" onclick="switchSchematic('kinematic')">Front View</button>
-          <button class="tab-pill" id="tab-btn-side" onclick="switchSchematic('side')">Side Walk View</button>
+          <button class="tab-pill active" id="tab-btn-side" onclick="switchSchematic('side')">Side Walk View</button>
+          <button class="tab-pill" id="tab-btn-kinematic" onclick="switchSchematic('kinematic')">Front View</button>
           <button class="tab-pill" id="tab-btn-circuit" onclick="switchSchematic('circuit')">Circuit Pinout</button>
         </div>
       </div>
@@ -475,7 +475,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         
         <!-- 1. FRONT ANIMATED KINEMATIC RIG -->
-        <svg id="svg-kinematic" class="schematic-svg" viewBox="0 0 540 370">
+        <svg id="svg-kinematic" class="schematic-svg" viewBox="0 0 540 370" style="display: none;">
           <defs>
             <linearGradient id="grad-r-link" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.9" />
@@ -568,7 +568,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </svg>
 
         <!-- 2. SIDE SAGITTAL WALKING RIG (Interactive 2D Biped Walking Visualizer) -->
-        <svg id="svg-side" class="schematic-svg" viewBox="0 0 540 370" style="display: none;">
+        <svg id="svg-side" class="schematic-svg" viewBox="0 0 540 370" style="display: block;">
           <!-- Ground Surface -->
           <line x1="20" y1="330" x2="520" y2="330" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6" />
           <rect x="20" y="332" width="500" height="24" fill="rgba(15,23,42,0.6)" />
@@ -1696,6 +1696,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     setInterval(pollTelemetry, 350);
     pollTelemetry();
     selectJoint(0, 'Right Hip');
+    switchSchematic('side');
     animateRig(liveAngles);
   </script>
 </body>
