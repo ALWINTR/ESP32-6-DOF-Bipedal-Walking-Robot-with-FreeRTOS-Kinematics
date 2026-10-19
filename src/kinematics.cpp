@@ -67,78 +67,49 @@ static inline float calculateSwingClearance(float stepPhase, float sClear) {
 }
 
 // =============================================================================
-// 2. Coordinated Joint Actuation Layer
-// Enforces:
-//   1. Execution Order: FIRST Hips, SECOND Knees, LAST Feet
-//   2. Knee-Hip Coupling: delta_knee = |delta_hip| ONLY during swing
-//   3. Alternating Knees: Stance knee locked 100% straight; both never bend together
-//   4. Foot Constancy: Both feet locked strictly at 94.0° (zero angle change)
 // =============================================================================
+// 2. Coordinated Joint Actuation Layer (True 6-Joint Dynamic Inverse Kinematics)
+// Drives ALL 6 joints (Hips, Knees, Feet) simultaneously and harmoniously:
+//   - Right Leg: Hip = R_HIP_HOME + dHip,  Knee = R_KNEE_HOME + dKnee,  Foot = R_FOOT_HOME + dAnkle
+//   - Left Leg:  Hip = L_HIP_HOME - dHip,  Knee = L_KNEE_HOME - dKnee,  Foot = L_FOOT_HOME - dAnkle
+//   - In Swing: Hip swings forward, Knee bends dynamically to lift foot, Ankle articulates for ground clearance
+//   - In Stance: Hip drives backward, Knee & Ankle maintain constant height and keep sole flat on ground
+// =============================================================================
+void updateServoPos(float dHip, float dKnee, float dAnkle, char leg, bool isSwing) {
+  if (leg == 'l') {
+    // Left Leg: Inverted symmetry across all 3 joints
+    setServoAngle(CH_L_HIP,  constrain(L_HIP_HOME  - dHip,   L_HIP_MIN,  L_HIP_MAX));
+    setServoAngle(CH_L_KNEE, constrain(L_KNEE_HOME - dKnee,  L_KNEE_MIN, L_KNEE_MAX));
+    setServoAngle(CH_L_FOOT, constrain(L_FOOT_HOME - dAnkle, L_FOOT_MIN, L_FOOT_MAX));
+  } else if (leg == 'r') {
+    // Right Leg: Direct symmetry across all 3 joints
+    setServoAngle(CH_R_HIP,  constrain(R_HIP_HOME  + dHip,   R_HIP_MIN,  R_HIP_MAX));
+    setServoAngle(CH_R_KNEE, constrain(R_KNEE_HOME + dKnee,  R_KNEE_MIN, R_KNEE_MAX));
+    setServoAngle(CH_R_FOOT, constrain(R_FOOT_HOME + dAnkle, R_FOOT_MIN, R_FOOT_MAX));
+  }
+}
+
 void updateAllJoints(float xr, float zr, float xl, float zl) {
+  // Solve analytical 2D Inverse Kinematics for both legs simultaneously
   IKResult ikR = solveIK(xr, zr);
   IKResult ikL = solveIK(xl, zl);
   IKResult nom = solveIK(0.0f, stepHeight);
 
-  float dHipR = ikR.hipDeg - nom.hipDeg;
-  float dHipL = ikL.hipDeg - nom.hipDeg;
+  // Joint deltas relative to neutral standing height
+  float dHipR   = ikR.hipDeg - nom.hipDeg;
+  float dKneeR  = ikR.kneeDeg - nom.kneeDeg;
+  float dAnkleR = ikR.ankleDeg - nom.ankleDeg;
 
-  // Swing Detection: Leg is in swing only when lifted off the ground (z < stepHeight - 0.03cm)
+  float dHipL   = ikL.hipDeg - nom.hipDeg;
+  float dKneeL  = ikL.kneeDeg - nom.kneeDeg;
+  float dAnkleL = ikL.ankleDeg - nom.ankleDeg;
+
   bool isSwingR = (zr < stepHeight - 0.03f);
   bool isSwingL = (zl < stepHeight - 0.03f);
 
-  float kneeLiftR = 0.0f;
-  float kneeLiftL = 0.0f;
-
-  if (activeGaitName == "crouch" || activeGaitName == "squat") {
-    // Symmetrical knee flexion for squatting
-    float squat = constrain(nom.kneeDeg - ikR.kneeDeg, 0.0f, MAX_KNEE_LIFT_DEG);
-    kneeLiftR = squat;
-    kneeLiftL = squat;
-  } else {
-    // Swing Knee Clearance: Smoothly scales with ground clearance lift (peaks at mid-swing).
-    // In stance (isSwing == false), kneeLift is strictly 0.0f, locking the stance leg 100% straight!
-    // Both knees NEVER bend at the same time.
-    float clearR = max(0.0f, stepHeight - zr);
-    float clearL = max(0.0f, stepHeight - zl);
-    float effClear = (stepClearance > 0.05f) ? stepClearance : 0.40f;
-    float liftRatioR = constrain(clearR / effClear, 0.0f, 1.0f);
-    float liftRatioL = constrain(clearL / effClear, 0.0f, 1.0f);
-
-    kneeLiftR = isSwingR ? constrain(liftRatioR * MAX_KNEE_LIFT_DEG, 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
-    kneeLiftL = isSwingL ? constrain(liftRatioL * MAX_KNEE_LIFT_DEG, 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
-  }
-
-  // 1. FIRST: Both Hips (Primary stride motion)
-  setServoAngle(CH_R_HIP, constrain(R_HIP_HOME + dHipR, R_HIP_MIN, R_HIP_MAX));
-  setServoAngle(CH_L_HIP, constrain(L_HIP_HOME - dHipL, L_HIP_MIN, L_HIP_MAX));
-
-  // 2. SECOND: Both Knees (Strictly alternating swing lift; stance knee locked straight)
-  setServoAngle(CH_R_KNEE, constrain(R_KNEE_HOME + kneeLiftR, R_KNEE_MIN, R_KNEE_MAX));
-  setServoAngle(CH_L_KNEE, constrain(L_KNEE_HOME - kneeLiftL, L_KNEE_MIN, L_KNEE_MAX));
-
-  // 3. LAST: Both Feet strictly CONSTANT at 94.0° (Zero angle change)
-  setServoAngle(CH_R_FOOT, R_FOOT_HOME);
-  setServoAngle(CH_L_FOOT, L_FOOT_HOME);
-}
-
-void updateServoPos(float dHip, float dKnee, float dAnkle, char leg, bool isSwing) {
-  float kneeLift = isSwing ? constrain(fabs(dHip), 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
-
-  if (leg == 'l') {
-    // 1. Hip
-    setServoAngle(CH_L_HIP, constrain(L_HIP_HOME - dHip, L_HIP_MIN, L_HIP_MAX));
-    // 2. Knee (Knee lift equals hip delta in swing, straight in stance)
-    setServoAngle(CH_L_KNEE, constrain(L_KNEE_HOME - kneeLift, L_KNEE_MIN, L_KNEE_MAX));
-    // 3. Foot (Strictly constant at 94.0°)
-    setServoAngle(CH_L_FOOT, L_FOOT_HOME);
-  } else if (leg == 'r') {
-    // 1. Hip
-    setServoAngle(CH_R_HIP, constrain(R_HIP_HOME + dHip, R_HIP_MIN, R_HIP_MAX));
-    // 2. Knee (Knee lift equals hip delta in swing, straight in stance)
-    setServoAngle(CH_R_KNEE, constrain(R_KNEE_HOME + kneeLift, R_KNEE_MIN, R_KNEE_MAX));
-    // 3. Foot (Strictly constant at 94.0°)
-    setServoAngle(CH_R_FOOT, R_FOOT_HOME);
-  }
+  // Actuate all joints simultaneously according to exact Inverse Kinematics
+  updateServoPos(dHipR, dKneeR, dAnkleR, 'r', isSwingR);
+  updateServoPos(dHipL, dKneeL, dAnkleL, 'l', isSwingL);
 }
 
 void pos(float x, float z, char leg) {
@@ -277,25 +248,29 @@ void runJointDiagnostics() {
   parkNeutralStand();
   delay(300);
 
-  // Right Hip (CH 0): 94° -> 98° -> 94° (Forward swing)
-  setServoAngle(CH_R_HIP, 98.0f); delay(800);
-  setServoAngle(CH_R_HIP, R_HIP_HOME); delay(400);
+  // 1. Right Hip (CH 0): 94° -> 100° -> 94° (Forward stride sweep)
+  setServoAngle(CH_R_HIP, 100.0f); delay(700);
+  setServoAngle(CH_R_HIP, R_HIP_HOME); delay(350);
 
-  // Right Knee (CH 1): 8° -> 10.5° -> 8° (Safe clearance gap)
-  setServoAngle(CH_R_KNEE, 10.5f); delay(800);
-  setServoAngle(CH_R_KNEE, R_KNEE_HOME); delay(400);
+  // 2. Right Knee (CH 1): 8° -> 16° -> 8° (Knee flexion lift sweep)
+  setServoAngle(CH_R_KNEE, 16.0f); delay(700);
+  setServoAngle(CH_R_KNEE, R_KNEE_HOME); delay(350);
 
-  // Left Hip (CH 4): 94° -> 90° -> 94° (Forward swing)
-  setServoAngle(CH_L_HIP, 90.0f); delay(800);
-  setServoAngle(CH_L_HIP, L_HIP_HOME); delay(400);
+  // 3. Right Foot (CH 12): 94° -> 99° -> 94° (Dynamic ground leveling sweep)
+  setServoAngle(CH_R_FOOT, 99.0f); delay(700);
+  setServoAngle(CH_R_FOOT, R_FOOT_HOME); delay(350);
 
-  // Left Knee (CH 8): 94° -> 91.5° -> 94° (Safe clearance gap)
-  setServoAngle(CH_L_KNEE, 91.5f); delay(800);
-  setServoAngle(CH_L_KNEE, L_KNEE_HOME); delay(400);
+  // 4. Left Hip (CH 4): 94° -> 88° -> 94° (Forward stride sweep)
+  setServoAngle(CH_L_HIP, 88.0f); delay(700);
+  setServoAngle(CH_L_HIP, L_HIP_HOME); delay(350);
 
-  // Feet stay strictly constant at 94.0°
-  setServoAngle(CH_R_FOOT, R_FOOT_HOME);
-  setServoAngle(CH_L_FOOT, L_FOOT_HOME);
+  // 5. Left Knee (CH 8): 94° -> 86° -> 94° (Knee flexion lift sweep)
+  setServoAngle(CH_L_KNEE, 86.0f); delay(700);
+  setServoAngle(CH_L_KNEE, L_KNEE_HOME); delay(350);
+
+  // 6. Left Foot (CH 15): 94° -> 89° -> 94° (Dynamic ground leveling sweep)
+  setServoAngle(CH_L_FOOT, 89.0f); delay(700);
+  setServoAngle(CH_L_FOOT, L_FOOT_HOME); delay(350);
 
   parkNeutralStand();
 }

@@ -1294,8 +1294,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     function animateRig(angles) {
       const rHipA  = angles['0']  !== undefined ? angles['0']  : 94;
       const rKneeA = angles['1']  !== undefined ? angles['1']  : 8;
+      const rFootA = angles['12'] !== undefined ? angles['12'] : 94;
       const lHipA  = angles['4']  !== undefined ? angles['4']  : 94;
       const lKneeA = angles['8']  !== undefined ? angles['8']  : 94;
+      const lFootA = angles['15'] !== undefined ? angles['15'] : 94;
 
       // 1. FRONT VIEW KINEMATIC RIG
       // Right Leg Front View
@@ -1313,9 +1315,17 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const node12 = document.getElementById('node-12');
       if (node12) node12.setAttribute('transform', `translate(${rAnkleX - 140}, ${rAnkleY - 300})`);
       const footPlateR = document.getElementById('plate-foot-r');
-      if (footPlateR) { footPlateR.setAttribute('x', rAnkleX - 35); footPlateR.setAttribute('y', rAnkleY + 14); }
+      if (footPlateR) { 
+        footPlateR.setAttribute('x', rAnkleX - 35); 
+        footPlateR.setAttribute('y', rAnkleY + 14);
+        footPlateR.setAttribute('transform', `rotate(${(rFootA - 94.0) * 0.8}, ${rAnkleX}, ${rAnkleY + 14})`);
+      }
       const footTextR = document.getElementById('plate-text-r');
-      if (footTextR) { footTextR.setAttribute('x', rAnkleX); footTextR.setAttribute('y', rAnkleY + 25); }
+      if (footTextR) { 
+        footTextR.setAttribute('x', rAnkleX); 
+        footTextR.setAttribute('y', rAnkleY + 25);
+        footTextR.setAttribute('transform', `rotate(${(rFootA - 94.0) * 0.8}, ${rAnkleX}, ${rAnkleY + 14})`);
+      }
 
       // Left Leg Front View
       const dHipL = -(lHipA - 94.0) * (Math.PI / 180);
@@ -1332,11 +1342,19 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const node15 = document.getElementById('node-15');
       if (node15) node15.setAttribute('transform', `translate(${lAnkleX - 400}, ${lAnkleY - 300})`);
       const footPlateL = document.getElementById('plate-foot-l');
-      if (footPlateL) { footPlateL.setAttribute('x', lAnkleX - 35); footPlateL.setAttribute('y', lAnkleY + 14); }
+      if (footPlateL) { 
+        footPlateL.setAttribute('x', lAnkleX - 35); 
+        footPlateL.setAttribute('y', lAnkleY + 14);
+        footPlateL.setAttribute('transform', `rotate(${-(lFootA - 94.0) * 0.8}, ${lAnkleX}, ${lAnkleY + 14})`);
+      }
       const footTextL = document.getElementById('plate-text-l');
-      if (footTextL) { footTextL.setAttribute('x', lAnkleX); footTextL.setAttribute('y', lAnkleY + 25); }
+      if (footTextL) { 
+        footTextL.setAttribute('x', lAnkleX); 
+        footTextL.setAttribute('y', lAnkleY + 25);
+        footTextL.setAttribute('transform', `rotate(${-(lFootA - 94.0) * 0.8}, ${lAnkleX}, ${lAnkleY + 14})`);
+      }
 
-      // 2. SIDE SAGITTAL WALKING RIG (Walking Profile with Stride & Knee Lift)
+      // 2. SIDE SAGITTAL WALKING RIG (Walking Profile with Stride, Knee Lift & Dynamic Ankle Flexion)
       const hipX = 270, hipY = 80;
       const L1 = 110, L2 = 120; // visual link lengths
 
@@ -1352,9 +1370,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       setCircle('side-knee-r', skR_x, skR_y);
       setLine('side-shin-r', skR_x, skR_y, saR_x, saR_y);
       setCircle('side-ankle-r', saR_x, saR_y);
-      setRect('side-foot-r', saR_x - 32, saR_y + 4);
+      
+      const footDegR = (rFootA - 94.0) * 1.5;
+      const elFootR = document.getElementById('side-foot-r');
+      if (elFootR) {
+        elFootR.setAttribute('x', saR_x - 32);
+        elFootR.setAttribute('y', saR_y + 4);
+        elFootR.setAttribute('transform', `rotate(${footDegR}, ${saR_x}, ${saR_y})`);
+      }
       const txtFootR = document.getElementById('side-foot-text-r');
-      if (txtFootR) { txtFootR.setAttribute('x', saR_x); txtFootR.setAttribute('y', saR_y + 15); }
+      if (txtFootR) { 
+        txtFootR.setAttribute('x', saR_x); 
+        txtFootR.setAttribute('y', saR_y + 15);
+        txtFootR.setAttribute('transform', `rotate(${footDegR}, ${saR_x}, ${saR_y})`);
+      }
 
       // Left Leg Side Profile:
       const radHipL = (lHipA - 94.0) * (Math.PI / 180) * 1.8;
@@ -1368,9 +1397,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       setCircle('side-knee-l', skL_x, skL_y);
       setLine('side-shin-l', skL_x, skL_y, saL_x, saL_y);
       setCircle('side-ankle-l', saL_x, saL_y);
-      setRect('side-foot-l', saL_x - 32, saL_y + 4);
+      
+      const footDegL = -(lFootA - 94.0) * 1.5;
+      const elFootL = document.getElementById('side-foot-l');
+      if (elFootL) {
+        elFootL.setAttribute('x', saL_x - 32);
+        elFootL.setAttribute('y', saL_y + 4);
+        elFootL.setAttribute('transform', `rotate(${footDegL}, ${saL_x}, ${saL_y})`);
+      }
       const txtFootL = document.getElementById('side-foot-text-l');
-      if (txtFootL) { txtFootL.setAttribute('x', saL_x); txtFootL.setAttribute('y', saL_y + 15); }
+      if (txtFootL) { 
+        txtFootL.setAttribute('x', saL_x); 
+        txtFootL.setAttribute('y', saL_y + 15);
+        txtFootL.setAttribute('transform', `rotate(${footDegL}, ${saL_x}, ${saL_y})`);
+      }
     }
 
     // =========================================================================

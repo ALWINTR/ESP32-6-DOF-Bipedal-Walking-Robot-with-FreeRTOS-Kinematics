@@ -64,32 +64,32 @@ enum JointID {
 
 // Right Leg Neutral Baselines & Safety Bracket Limits
 #define R_HIP_HOME         94.0f
-#define R_HIP_MIN          85.0f
-#define R_HIP_MAX          103.0f
+#define R_HIP_MIN          82.0f
+#define R_HIP_MAX          106.0f
 
 #define R_KNEE_HOME        8.0f
-#define R_KNEE_MIN         8.0f
-#define R_KNEE_MAX         16.5f
+#define R_KNEE_MIN         5.0f
+#define R_KNEE_MAX         28.0f
 
 #define R_FOOT_HOME        94.0f
-#define R_FOOT_MIN         94.0f
-#define R_FOOT_MAX         94.0f
+#define R_FOOT_MIN         82.0f
+#define R_FOOT_MAX         106.0f
 
 // Left Leg Neutral Baselines & Safety Bracket Limits
 #define L_HIP_HOME         94.0f
-#define L_HIP_MIN          85.0f
-#define L_HIP_MAX          103.0f
+#define L_HIP_MIN          82.0f
+#define L_HIP_MAX          106.0f
 
 #define L_KNEE_HOME        94.0f
-#define L_KNEE_MIN         85.5f
-#define L_KNEE_MAX         94.0f
+#define L_KNEE_MIN         74.0f
+#define L_KNEE_MAX         97.0f
 
 #define L_FOOT_HOME        94.0f
-#define L_FOOT_MIN         94.0f
-#define L_FOOT_MAX         94.0f
+#define L_FOOT_MIN         82.0f
+#define L_FOOT_MAX         106.0f
 
 // Maximum knee lift angle change (matches hip stride delta)
-#define MAX_KNEE_LIFT_DEG  8.5f
+#define MAX_KNEE_LIFT_DEG  20.0f
 
 struct JointConfig {
   int channel;
