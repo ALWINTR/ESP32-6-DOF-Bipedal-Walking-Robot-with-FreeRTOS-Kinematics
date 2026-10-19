@@ -37,10 +37,10 @@ void handleSerialCommands() {
     Serial.println("[CLI] Executing Single Full Human Stride Asynchronously on Core 1...");
     executeSingleStep();
   } else if (cmd == "takestep" || cmd == "ref_step") {
-    Serial.println("[CLI] Executing Reference takeStep(1.6, 20)...");
-    takeStep(1.6f, 20);
-  } else if (cmd == "init" || cmd == "initialize") {
-    Serial.println("[CLI] Executing Stance Height Extension Sequence...");
+    Serial.println("[CLI] Executing Reference takeStep(1.2, 20)...");
+    takeStep(1.2f, 20);
+  } else if (cmd == "init" || cmd == "initialize" || cmd == "ref_init") {
+    Serial.println("[CLI] Executing Stance Initialization Sequence...");
     initialize();
   } else if (cmd == "stop" || cmd == "stand" || cmd == "park") {
     Serial.println("[CLI] Settling to Calibrated Stand Neutral.");
@@ -56,11 +56,10 @@ void handleSerialCommands() {
                   t.activeGait, t.isRunning ? "YES" : "NO", t.contactState,
                   t.groundForceNewtons, t.weightLeftGrams, t.weightRightGrams);
     Serial.print("  Angles: ");
+    JointState snapshots[NUM_JOINTS];
+    getAllJointSnapshots(snapshots);
     for (int i = 0; i < NUM_JOINTS; i++) {
-      JointState j;
-      if (getJointSnapshot(i, &j)) {
-        Serial.printf("[CH%d %s: %.1f°] ", j.channel, j.name, j.currentAngle);
-      }
+      Serial.printf("[CH%d %s: %.1f°] ", snapshots[i].channel, snapshots[i].name, snapshots[i].currentAngle);
     }
     Serial.println();
   } else if (cmd == "help" || cmd == "?") {

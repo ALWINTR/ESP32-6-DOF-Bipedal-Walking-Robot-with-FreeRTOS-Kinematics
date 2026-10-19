@@ -121,6 +121,17 @@ bool getJointSnapshotByID(JointID id, JointState* out) {
   return getJointSnapshot(static_cast<int>(id), out);
 }
 
+bool getAllJointSnapshots(JointState out[NUM_JOINTS]) {
+  if (!out) return false;
+  if (lockI2C(20)) {
+    memcpy(out, joints, sizeof(JointState) * NUM_JOINTS);
+    unlockI2C();
+    return true;
+  }
+  memcpy(out, joints, sizeof(JointState) * NUM_JOINTS);
+  return true;
+}
+
 float getJointHomeAngle(JointID id) {
   int idx = static_cast<int>(id);
   if (idx >= 0 && idx < NUM_JOINTS) {
@@ -184,8 +195,8 @@ void parkNeutralStand() {
 void scanI2CDevices(String& jsonOutput) {
   jsonOutput = "{\"devices\":[";
   int count = 0;
-  if (lockI2C(100)) {
-    for (byte addr = 1; addr < 127; addr++) {
+  for (byte addr = 1; addr < 127; addr++) {
+    if (lockI2C(10)) {
       Wire.beginTransmission(addr);
       if (Wire.endTransmission() == 0) {
         if (count > 0) jsonOutput += ",";
@@ -194,8 +205,8 @@ void scanI2CDevices(String& jsonOutput) {
         jsonOutput += hexBuf;
         count++;
       }
+      unlockI2C();
     }
-    unlockI2C();
   }
   jsonOutput += "],\"pca_found\":" + String(isPCAFound() ? "true" : "false") + "}";
 }

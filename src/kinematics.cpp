@@ -83,16 +83,12 @@ IKResult solveIK(float x, float z) {
   return res;
 }
 
-// C2-Continuous Zero-Jerk Quintic Swing Lift with Double-Support Buffer
+// C2-Continuous Zero-Jerk Quintic Swing Lift
 // Both velocity and acceleration are strictly zero at liftoff and touchdown.
 static inline float calculateSwingClearance(float stepPhase, float sClear) {
-  const float ds = 0.15f * (float)M_PI; // 15% double support buffer on each transition (30% total)
-  if (stepPhase < ds || stepPhase > ((float)M_PI - ds)) {
-    return 0.0f; // Firm double-support ground contact
-  }
-  float u = (stepPhase - ds) / ((float)M_PI - 2.0f * ds);
-  // Quintic polynomial bell curve: 64 * u^3 * (1 - u)^3 has peak = 1.0 at u = 0.5
+  float u = constrain(stepPhase / (float)M_PI, 0.0f, 1.0f);
   float u1 = 1.0f - u;
+  // Quintic polynomial bell curve: 64 * u^3 * (1 - u)^3 has peak = 1.0 at u = 0.5
   return sClear * (64.0f * (u * u * u) * (u1 * u1 * u1));
 }
 
@@ -182,6 +178,10 @@ void updateLocomotion(float dt) {
   // ---------------------------------------------------------------------------
   // B. Single Step Routine (Non-blocking, deterministic 1-stride execution)
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // B. Single Step Routine (Non-blocking, deterministic 1-stride execution)
+  // Two monotonic phases: zero ground reversals, zero impact, zero scraping.
+  // ---------------------------------------------------------------------------
   else if (activeMode == GAIT_SINGLE_STEP) {
     float period = 1.0f / walkFreq;
     routineTime += dt;
@@ -201,21 +201,33 @@ void updateLocomotion(float dt) {
       return;
     }
 
-    // Smooth half-sine window: 0 -> 1 -> 0
-    float win = sinf(u * (float)M_PI);
-    float phase = 2.0f * (float)M_PI * u;
-    float cosP = cosf(phase);
+    float sClear = constrain(stepClearance, 0.15f, 0.55f);
+    float sLen   = constrain(stepLength, 0.40f, 1.20f);
+    float xr = 0.0f, xl = 0.0f;
+    float zr = stepHeight, zl = stepHeight;
+    float liftL = 0.0f, liftR = 0.0f;
 
-    float sLength = stepLength * win;
-    float sClear  = constrain(stepClearance, 0.15f, 0.70f) * win;
-
-    float liftL = (phase < (float)M_PI) ? calculateSwingClearance(phase, sClear) : 0.0f;
-    float liftR = (phase >= (float)M_PI) ? calculateSwingClearance(phase - (float)M_PI, sClear) : 0.0f;
-
-    float xr =  cosP * sLength;
-    float xl = -cosP * sLength;
-    float zr = stepHeight - liftR;
-    float zl = stepHeight - liftL;
+    if (u < 0.5f) {
+      // Phase 1: Left leg swings forward (0 -> +sLen); Right leg stance pushes (0 -> -sLen)
+      float s = u / 0.5f;
+      float e = 6.0f * powf(s, 5) - 15.0f * powf(s, 4) + 10.0f * powf(s, 3);
+      float s1 = 1.0f - s;
+      liftL = sClear * (64.0f * (s * s * s) * (s1 * s1 * s1));
+      xl = 0.0f + sLen * e;
+      xr = 0.0f - sLen * e;
+      zl = stepHeight - liftL;
+      zr = stepHeight;
+    } else {
+      // Phase 2: Right leg swings forward (-sLen -> 0); Left leg stance pushes (+sLen -> 0)
+      float s = (u - 0.5f) / 0.5f;
+      float e = 6.0f * powf(s, 5) - 15.0f * powf(s, 4) + 10.0f * powf(s, 3);
+      float s1 = 1.0f - s;
+      liftR = sClear * (64.0f * (s * s * s) * (s1 * s1 * s1));
+      xr = -sLen + sLen * e;
+      xl =  sLen - sLen * e;
+      zr = stepHeight - liftR;
+      zl = stepHeight;
+    }
 
     updateAllJoints(xr, zr, xl, zl);
 
@@ -258,21 +270,15 @@ void updateLocomotion(float dt) {
     float u = fmodf(routineTime, PHASE_DUR) / PHASE_DUR;
     float sineSweep = sinf(u * (float)M_PI); // 0 -> 1 -> 0
 
-    // Hold neutral baseline on all joints and articulate test joint
-    parkNeutralStand();
-
-    if (phaseIdx == 0) {        // CH 0: Right Hip (94° -> 100° -> 94°)
-      setServoAngle(CH_R_HIP, getJointHomeAngle(JOINT_R_HIP) + 6.0f * sineSweep);
-    } else if (phaseIdx == 1) { // CH 1: Right Knee (8° -> 16° -> 8°)
-      setServoAngle(CH_R_KNEE, getJointHomeAngle(JOINT_R_KNEE) + 8.0f * sineSweep);
-    } else if (phaseIdx == 2) { // CH 12: Right Foot (94° -> 99° -> 94°)
-      setServoAngle(CH_R_FOOT, getJointHomeAngle(JOINT_R_FOOT) + 5.0f * sineSweep);
-    } else if (phaseIdx == 3) { // CH 4: Left Hip (94° -> 88° -> 94°)
-      setServoAngle(CH_L_HIP, getJointHomeAngle(JOINT_L_HIP) - 6.0f * sineSweep);
-    } else if (phaseIdx == 4) { // CH 8: Left Knee (94° -> 86° -> 94°)
-      setServoAngle(CH_L_KNEE, getJointHomeAngle(JOINT_L_KNEE) - 8.0f * sineSweep);
-    } else if (phaseIdx == 5) { // CH 15: Left Foot (94° -> 89° -> 94°)
-      setServoAngle(CH_L_FOOT, getJointHomeAngle(JOINT_L_FOOT) - 5.0f * sineSweep);
+    for (int i = 0; i < NUM_JOINTS; i++) {
+      float target = getJointHomeAngle(static_cast<JointID>(i));
+      if (i == 0 && phaseIdx == 0) target += 6.0f * sineSweep;
+      else if (i == 1 && phaseIdx == 1) target += 8.0f * sineSweep;
+      else if (i == 2 && phaseIdx == 2) target += 5.0f * sineSweep;
+      else if (i == 3 && phaseIdx == 3) target -= 6.0f * sineSweep;
+      else if (i == 4 && phaseIdx == 4) target -= 8.0f * sineSweep;
+      else if (i == 5 && phaseIdx == 5) target -= 5.0f * sineSweep;
+      setServoAngle(DEFAULT_JOINTS[i].channel, target);
     }
 
     strncpy(contactStateBuf, "DIAGNOSTIC TEST", sizeof(contactStateBuf) - 1);
@@ -286,7 +292,7 @@ void updateLocomotion(float dt) {
   // ---------------------------------------------------------------------------
   else if (activeMode == GAIT_INITIALIZE) {
     routineTime += dt;
-    const float initDur = 1.0f;
+    const float initDur = 1.2f;
     float u = routineTime / initDur;
 
     if (u >= 1.0f) {
@@ -297,8 +303,10 @@ void updateLocomotion(float dt) {
       return;
     }
 
-    float smoothU = 3.0f * (u * u) - 2.0f * (u * u * u);
-    float curH = MAX_LEG_EXTENSION_CM + (stepHeight - MAX_LEG_EXTENSION_CM) * smoothU;
+    // Smooth quintic rise from safe squat (9.50cm) to calibrated stand (10.00cm)
+    float smoothU = 6.0f * powf(u, 5) - 15.0f * powf(u, 4) + 10.0f * powf(u, 3);
+    const float squatH = 9.50f;
+    float curH = squatH + (stepHeight - squatH) * smoothU;
     updateAllJoints(0.0f, curH, 0.0f, curH);
     strncpy(activeGaitBuf, "initialize", sizeof(activeGaitBuf) - 1);
     unlockLocomotion();
@@ -322,8 +330,8 @@ void updateLocomotion(float dt) {
 
   float cosP = cosf(phase);
 
-  float sLength = stepLength * sScale;
-  float sClear  = constrain(stepClearance, 0.15f, 0.70f) * sScale;
+  float sLength = constrain(stepLength, 0.40f, 1.20f) * sScale;
+  float sClear  = constrain(stepClearance, 0.15f, 0.55f) * sScale;
   float sHeight = stepHeight;
 
   float xr = 0.0f;
@@ -331,7 +339,7 @@ void updateLocomotion(float dt) {
   float zr = sHeight;
   float zl = sHeight;
 
-  // Zero-impact swing clearance profiles with double-support weight transfer
+  // Zero-impact C2 swing clearance profiles across entire swing half-cycle
   float liftL = (phase < (float)M_PI) ? calculateSwingClearance(phase, sClear) : 0.0f;
   float liftR = (phase >= (float)M_PI) ? calculateSwingClearance(phase - (float)M_PI, sClear) : 0.0f;
 
@@ -348,13 +356,15 @@ void updateLocomotion(float dt) {
     zl = sHeight - liftL * 1.15f;
     strncpy(activeGaitBuf, "march", sizeof(activeGaitBuf) - 1);
   } else if (activeMode == GAIT_TURN_LEFT) {
+    // Left turn: Right leg outer (full stride), Left leg inner (reduced stride, opposite phase)
     xr =  cosP * sLength;
-    xl =  cosP * (sLength * 0.35f);
+    xl = -cosP * (sLength * 0.35f);
     zr = sHeight - liftR;
     zl = sHeight - liftL;
     strncpy(activeGaitBuf, "turn_left", sizeof(activeGaitBuf) - 1);
   } else if (activeMode == GAIT_TURN_RIGHT) {
-    xr = -cosP * (sLength * 0.35f);
+    // Right turn: Right leg inner (reduced stride), Left leg outer (full stride, opposite phase)
+    xr =  cosP * (sLength * 0.35f);
     xl = -cosP * sLength;
     zr = sHeight - liftR;
     zl = sHeight - liftL;
@@ -362,7 +372,8 @@ void updateLocomotion(float dt) {
   } else if (activeMode == GAIT_CROUCH) {
     xr = 0.0f;
     xl = 0.0f;
-    float squat = (0.5f - 0.5f * cosP) * 1.20f * sScale;
+    // Symmetrical squat depth: 0.65cm safe max to avoid hitting knee hardware brackets
+    float squat = (0.5f - 0.5f * cosP) * 0.65f * sScale;
     zr = sHeight - squat;
     zl = sHeight - squat;
     strncpy(activeGaitBuf, "crouch", sizeof(activeGaitBuf) - 1);
@@ -423,6 +434,10 @@ void initKinematics() {
 
 void requestGaitMode(LocomotionMode mode) {
   if (lockLocomotion(20)) {
+    if (activeMode == GAIT_STAND && mode != GAIT_STAND) {
+      walkTime = 0.0f;
+      currentGaitScale = 0.0f;
+    }
     activeMode  = mode;
     routineTime = 0.0f;
     if (mode == GAIT_STAND) {
@@ -456,7 +471,7 @@ void startLocomotion(const String& gait) {
     requestGaitMode(GAIT_CROUCH);
   } else if (g == "diag" || g == "test" || g == "test_joints") {
     requestGaitMode(GAIT_DIAGNOSTICS);
-  } else if (g == "init" || g == "initialize") {
+  } else if (g == "init" || g == "initialize" || g == "ref_init") {
     requestGaitMode(GAIT_INITIALIZE);
   } else {
     // Default forward walk
@@ -473,11 +488,11 @@ void setGaitParam(const String& param, float val) {
     if (param == "freq" || param == "speed") {
       walkFreq = constrain(val, 0.3f, 1.5f);
     } else if (param == "stride" || param == "length") {
-      stepLength = constrain(val, 0.4f, 1.8f);
+      stepLength = constrain(val, 0.40f, 1.20f);
     } else if (param == "knee" || param == "clearance" || param == "lift") {
-      stepClearance = constrain(val, 0.15f, 0.70f);
+      stepClearance = constrain(val, 0.15f, 0.55f);
     } else if (param == "height" || param == "stance") {
-      stepHeight = constrain(val, 8.8f, MAX_LEG_EXTENSION_CM);
+      stepHeight = constrain(val, 9.40f, 10.10f);
     }
     unlockLocomotion();
   }
@@ -519,7 +534,7 @@ void runJointDiagnostics() {
 
 void takeStep(float sLength, int stepVelocity) {
   if (lockLocomotion(20)) {
-    stepLength = constrain(sLength, 0.4f, 1.8f);
+    stepLength = constrain(sLength, 0.40f, 1.20f);
     if (stepVelocity > 0) {
       walkFreq = constrain(1000.0f / (float)(stepVelocity * 50), 0.3f, 1.5f);
     }

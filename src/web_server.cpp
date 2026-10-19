@@ -22,13 +22,13 @@ static void handleRoot() {
 
 static void handleGetAngles() {
   LocomotionTelemetry telem = getLocomotionTelemetry();
+  JointState snapshots[NUM_JOINTS];
+  getAllJointSnapshots(snapshots);
+
   String json = "{\"angles\":{";
   for (int i = 0; i < NUM_JOINTS; i++) {
-    JointState j;
-    if (getJointSnapshot(i, &j)) {
-      json += "\"" + String(j.channel) + "\":" + String((int)roundf(j.currentAngle));
-      if (i < NUM_JOINTS - 1) json += ",";
-    }
+    json += "\"" + String(snapshots[i].channel) + "\":" + String((int)roundf(snapshots[i].currentAngle));
+    if (i < NUM_JOINTS - 1) json += ",";
   }
   json += "},\"active_gait\":\"" + String(telem.activeGait) + "\"";
   json += ",\"gait_running\":" + String(telem.isRunning ? "true" : "false");
@@ -61,9 +61,9 @@ static void handleRunGait() {
     executeSingleStep();
     server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"step\"}");
   } else if (gait == "ref_step" || gait == "takestep") {
-    takeStep(1.6f, 20);
+    takeStep(1.2f, 20);
     server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"ref_step\"}");
-  } else if (gait == "init" || gait == "initialize") {
+  } else if (gait == "init" || gait == "initialize" || gait == "ref_init") {
     initialize();
     server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"initialize\"}");
   } else if (gait == "test" || gait == "test_joints" || gait == "diag") {
@@ -132,11 +132,11 @@ static void handleCommand() {
     executeSingleStep();
     out = "Single Stride Routine Initiated";
   } else if (cmd == "takestep" || cmd == "ref_step") {
-    takeStep(1.6f, 20);
+    takeStep(1.2f, 20);
     out = "Reference takeStep Routine Initiated";
-  } else if (cmd == "init" || cmd == "initialize") {
+  } else if (cmd == "init" || cmd == "initialize" || cmd == "ref_init") {
     initialize();
-    out = "Leg Extension Routine Initiated";
+    out = "Stance Initialization Routine Initiated";
   } else if (cmd == "stop" || cmd == "stand" || cmd == "park") {
     stopLocomotion();
     out = "Robot Parked in Stand Neutral";

@@ -40,6 +40,7 @@ void setJointAngle(JointID id, float angle);
 // Thread-safe joint state accessors
 bool getJointSnapshot(int index, JointState* out);
 bool getJointSnapshotByID(JointID id, JointState* out);
+bool getAllJointSnapshots(JointState out[NUM_JOINTS]);
 JointState* getJoint(int index);
 JointState* getJointByID(JointID id);
 float getJointHomeAngle(JointID id);
