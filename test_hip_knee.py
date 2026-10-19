@@ -1,7 +1,23 @@
 import urllib.request
 import time
 
-ROBOT_IP = "192.168.1.22"
+import sys
+
+ROBOT_IPS = ["192.168.1.24", "192.168.1.22", "biped.local", "192.168.4.1"]
+ROBOT_IP = sys.argv[1] if len(sys.argv) > 1 else None
+
+if not ROBOT_IP:
+    for ip in ROBOT_IPS:
+        try:
+            req = urllib.request.urlopen(f"http://{ip}/get_angles", timeout=1)
+            ROBOT_IP = ip
+            print(f"Connected to Robot at {ROBOT_IP}")
+            break
+        except Exception:
+            pass
+
+if not ROBOT_IP:
+    ROBOT_IP = "192.168.1.24"
 
 def set_angle(ch, val):
     url = f"http://{ROBOT_IP}/set_servo?ch={ch}&val={val}"

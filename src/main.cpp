@@ -34,44 +34,42 @@ void handleSerialCommands() {
     Serial.println("[CLI] Continuous Dynamic Walk Started.");
     startLocomotion("walk");
   } else if (cmd == "step") {
-    Serial.println("[CLI] Executing Single Full Human Stride...");
+    Serial.println("[CLI] Executing Single Full Human Stride Asynchronously on Core 1...");
     executeSingleStep();
-    Serial.println("[CLI] Stride Complete. Settled in Stand Neutral.");
   } else if (cmd == "takestep" || cmd == "ref_step") {
     Serial.println("[CLI] Executing Reference takeStep(1.6, 20)...");
     takeStep(1.6f, 20);
-    stopLocomotion();
-    Serial.println("[CLI] Reference takeStep Complete.");
   } else if (cmd == "init" || cmd == "initialize") {
-    Serial.println("[CLI] Executing Reference initialize()...");
+    Serial.println("[CLI] Executing Stance Height Extension Sequence...");
     initialize();
-    Serial.println("[CLI] Reference initialize Complete.");
   } else if (cmd == "stop" || cmd == "stand" || cmd == "park") {
     Serial.println("[CLI] Settling to Calibrated Stand Neutral.");
     stopLocomotion();
   } else if (cmd == "diag" || cmd == "test") {
-    Serial.println("[CLI] Running Joint Diagnostics Sweep...");
+    Serial.println("[CLI] Running 50Hz Smooth Joint Diagnostics Sweep...");
     runJointDiagnostics();
-    Serial.println("[CLI] Diagnostics Sweep Complete.");
   } else if (cmd == "ip" || cmd == "net" || cmd == "wifi") {
     printNetworkStatus();
   } else if (cmd == "status" || cmd == "telemetry") {
     LocomotionTelemetry t = getLocomotionTelemetry();
     Serial.printf("[STATUS] Gait: %s | Running: %s | Contact: %s | Force: %.2f N (L:%.1fg, R:%.1fg)\n",
-                  t.activeGait.c_str(), t.isRunning ? "YES" : "NO", t.contactState.c_str(),
+                  t.activeGait, t.isRunning ? "YES" : "NO", t.contactState,
                   t.groundForceNewtons, t.weightLeftGrams, t.weightRightGrams);
     Serial.print("  Angles: ");
     for (int i = 0; i < NUM_JOINTS; i++) {
-      JointState* j = getJoint(i);
-      if (j) Serial.printf("[CH%d %s: %.1f°] ", j->channel, j->name, j->currentAngle);
+      JointState j;
+      if (getJointSnapshot(i, &j)) {
+        Serial.printf("[CH%d %s: %.1f°] ", j.channel, j.name, j.currentAngle);
+      }
     }
     Serial.println();
   } else if (cmd == "help" || cmd == "?") {
     Serial.println("\n--- Biped Robot Serial CLI Commands ---");
     Serial.println("  walk   - Start continuous forward biped walking");
     Serial.println("  step   - Execute one single smooth stride");
-    Serial.println("  stop   - Emergency stop and hold neutral stand");
-    Serial.println("  diag   - Run joint diagnostics safety sweep");
+    Serial.println("  stop   - Smoothly settle and hold neutral stand");
+    Serial.println("  diag   - Run 50Hz joint diagnostics safety sweep");
+    Serial.println("  init   - Run stance height extension sequence");
     Serial.println("  ip     - Display active WiFi station & SoftAP URLs");
     Serial.println("  status - Display live 6-joint angles & ground force telemetry");
     Serial.println("  help   - Show this help menu\n");

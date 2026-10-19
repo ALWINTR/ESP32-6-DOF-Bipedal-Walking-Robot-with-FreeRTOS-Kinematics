@@ -18,12 +18,28 @@ static const char* NVS_KEYS[NUM_JOINTS] = {
   "ch15"  // JOINT_L_FOOT
 };
 
+bool lockI2C(TickType_t timeoutMs) {
+  if (i2cMutex == NULL) {
+    i2cMutex = xSemaphoreCreateMutex();
+  }
+  if (i2cMutex) {
+    return (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(timeoutMs)) == pdTRUE);
+  }
+  return false;
+}
+
+void unlockI2C() {
+  if (i2cMutex) {
+    xSemaphoreGive(i2cMutex);
+  }
+}
+
 bool initPCA() {
   if (i2cMutex == NULL) {
     i2cMutex = xSemaphoreCreateMutex();
   }
 
-  if (i2cMutex && xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+  if (lockI2C(50)) {
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     Wire.setClock(I2C_FREQUENCY_HZ);
     Wire.setTimeOut(50);
@@ -40,13 +56,13 @@ bool initPCA() {
       }
       Serial.printf("[PCA9685] Detected and initialized at 0x%02X (%dHz PWM, %dkHz I2C)\n",
                     PCA9685_I2C_ADDR, PCA9685_PWM_FREQ_HZ, I2C_FREQUENCY_HZ / 1000);
-      xSemaphoreGive(i2cMutex);
+      unlockI2C();
       return true;
     }
     pcaConnected = false;
     Serial.printf("[PCA9685] NOT found at 0x%02X on SDA=%d, SCL=%d. Will auto-retry.\n",
                   PCA9685_I2C_ADDR, PIN_I2C_SDA, PIN_I2C_SCL);
-    xSemaphoreGive(i2cMutex);
+    unlockI2C();
     return false;
   }
   return false;
@@ -57,7 +73,17 @@ bool isPCAFound() {
 }
 
 bool checkPCAConnection() {
-  if (pcaConnected) return true;
+  if (pcaConnected) {
+    if (lockI2C(20)) {
+      Wire.beginTransmission(PCA9685_I2C_ADDR);
+      if (Wire.endTransmission() != 0) {
+        pcaConnected = false;
+        Serial.println("[PCA9685] I2C heartbeat failed. Flagged for reconnection.");
+      }
+      unlockI2C();
+    }
+    return pcaConnected;
+  }
   return initPCA();
 }
 
@@ -79,6 +105,38 @@ JointState* getJointByID(JointID id) {
   return getJoint(static_cast<int>(id));
 }
 
+bool getJointSnapshot(int index, JointState* out) {
+  if (!out || index < 0 || index >= NUM_JOINTS) return false;
+  if (lockI2C(15)) {
+    *out = joints[index];
+    unlockI2C();
+    return true;
+  }
+  // Fallback direct copy if mutex timed out
+  *out = joints[index];
+  return true;
+}
+
+bool getJointSnapshotByID(JointID id, JointState* out) {
+  return getJointSnapshot(static_cast<int>(id), out);
+}
+
+float getJointHomeAngle(JointID id) {
+  int idx = static_cast<int>(id);
+  if (idx >= 0 && idx < NUM_JOINTS) {
+    return joints[idx].homeAngle;
+  }
+  return 94.0f;
+}
+
+float getJointCurrentAngle(JointID id) {
+  int idx = static_cast<int>(id);
+  if (idx >= 0 && idx < NUM_JOINTS) {
+    return joints[idx].currentAngle;
+  }
+  return 94.0f;
+}
+
 void setServoAngle(int channel, float angle) {
   if (!pcaConnected) {
     if (!initPCA()) return;
@@ -86,41 +144,60 @@ void setServoAngle(int channel, float angle) {
 
   int idx = getJointIndex(channel);
   if (idx != -1) {
-    // Bracket safety clamping
     angle = constrain(angle, joints[idx].minLimit, joints[idx].maxLimit);
-    joints[idx].currentAngle = angle;
   } else {
     angle = constrain(angle, 0.0f, 180.0f);
   }
 
-  // Convert angle (0-180°) to pulse microseconds (SERVOMIN_US to SERVOMAX_US)
+  // Microseconds calculation: 544us to 2400us
   float us = SERVOMIN_US + (angle / 180.0f) * (SERVOMAX_US - SERVOMIN_US);
-  // Convert microseconds to 12-bit PCA9685 tick count (20ms cycle @ 50Hz)
-  int pulselen = static_cast<int>(round((us * 4096.0f) / 20000.0f));
+  // 12-bit PCA9685 tick count: 20ms period @ 50Hz (4096 ticks)
+  int pulselen = static_cast<int>(roundf((us * 4096.0f) / 20000.0f));
 
-  // Pulse caching: skip redundant I2C writes if angle hasn't changed
-  if (idx != -1 && joints[idx].lastPulseLen == pulselen) {
-    return;
-  }
-
-  if (i2cMutex && xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(15)) == pdTRUE) {
-    if (idx != -1) joints[idx].lastPulseLen = pulselen;
-    pwm.setPWM(channel, 0, pulselen);
-    xSemaphoreGive(i2cMutex);
+  if (lockI2C(15)) {
+    if (idx != -1) {
+      joints[idx].currentAngle = angle;
+      joints[idx].targetAngle  = angle;
+    }
+    // Only perform physical I2C write if pulse width has changed
+    if (idx == -1 || joints[idx].lastPulseLen != pulselen) {
+      if (idx != -1) joints[idx].lastPulseLen = pulselen;
+      pwm.setPWM(channel, 0, pulselen);
+    }
+    unlockI2C();
   }
 }
 
 void setJointAngle(JointID id, float angle) {
-  if (id >= 0 && id < NUM_JOINTS) {
-    setServoAngle(joints[id].channel, angle);
+  int idx = static_cast<int>(id);
+  if (idx >= 0 && idx < NUM_JOINTS) {
+    setServoAngle(joints[idx].channel, angle);
   }
 }
 
 void parkNeutralStand() {
   for (int i = 0; i < NUM_JOINTS; i++) {
-    joints[i].targetAngle = joints[i].homeAngle;
     setServoAngle(joints[i].channel, joints[i].homeAngle);
   }
+}
+
+void scanI2CDevices(String& jsonOutput) {
+  jsonOutput = "{\"devices\":[";
+  int count = 0;
+  if (lockI2C(100)) {
+    for (byte addr = 1; addr < 127; addr++) {
+      Wire.beginTransmission(addr);
+      if (Wire.endTransmission() == 0) {
+        if (count > 0) jsonOutput += ",";
+        char hexBuf[10];
+        snprintf(hexBuf, sizeof(hexBuf), "\"0x%02X\"", addr);
+        jsonOutput += hexBuf;
+        count++;
+      }
+    }
+    unlockI2C();
+  }
+  jsonOutput += "],\"pca_found\":" + String(isPCAFound() ? "true" : "false") + "}";
 }
 
 void loadNVSJointOffsets() {

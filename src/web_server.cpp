@@ -24,19 +24,19 @@ static void handleGetAngles() {
   LocomotionTelemetry telem = getLocomotionTelemetry();
   String json = "{\"angles\":{";
   for (int i = 0; i < NUM_JOINTS; i++) {
-    JointState* j = getJoint(i);
-    if (j) {
-      json += "\"" + String(j->channel) + "\":" + String((int)round(j->currentAngle));
+    JointState j;
+    if (getJointSnapshot(i, &j)) {
+      json += "\"" + String(j.channel) + "\":" + String((int)roundf(j.currentAngle));
       if (i < NUM_JOINTS - 1) json += ",";
     }
   }
-  json += "},\"active_gait\":\"" + telem.activeGait + "\"";
+  json += "},\"active_gait\":\"" + String(telem.activeGait) + "\"";
   json += ",\"gait_running\":" + String(telem.isRunning ? "true" : "false");
   json += ",\"pca_found\":" + String(isPCAFound() ? "true" : "false");
   json += ",\"weight_l\":" + String(telem.weightLeftGrams, 1);
   json += ",\"weight_r\":" + String(telem.weightRightGrams, 1);
   json += ",\"force_n\":" + String(telem.groundForceNewtons, 2);
-  json += ",\"contact\":\"" + telem.contactState + "\"";
+  json += ",\"contact\":\"" + String(telem.contactState) + "\"";
   json += ",\"heap\":" + String(ESP.getFreeHeap());
   json += ",\"uptime\":" + String(millis() / 1000);
   json += ",\"rssi\":" + String(WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : 0);
@@ -51,25 +51,24 @@ static void handleRunGait() {
     return;
   }
   String gait = server.arg("gait");
+  gait.trim();
+  gait.toLowerCase();
+
   if (gait == "stand" || gait == "stop") {
     stopLocomotion();
     server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"stand\"}");
-  } else if (gait == "start" || gait == "walk" || gait == "forward") {
-    startLocomotion("walk");
-    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"walk\"}");
   } else if (gait == "step") {
-    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"step\"}");
     executeSingleStep();
+    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"step\"}");
   } else if (gait == "ref_step" || gait == "takestep") {
-    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"ref_step\"}");
     takeStep(1.6f, 20);
-    stopLocomotion();
+    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"ref_step\"}");
   } else if (gait == "init" || gait == "initialize") {
-    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"initialize\"}");
     initialize();
-  } else if (gait == "test" || gait == "test_joints") {
-    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"test\"}");
+    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"initialize\"}");
+  } else if (gait == "test" || gait == "test_joints" || gait == "diag") {
     runJointDiagnostics();
+    server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"diag\"}");
   } else {
     startLocomotion(gait);
     server.send(200, "application/json", "{\"status\":\"ok\",\"gait\":\"" + gait + "\"}");
@@ -111,19 +110,8 @@ static void handleResetOffsets() {
 }
 
 static void handleScanI2C() {
-  String json = "{\"devices\":[";
-  int count = 0;
-  for (byte addr = 1; addr < 127; addr++) {
-    Wire.beginTransmission(addr);
-    if (Wire.endTransmission() == 0) {
-      if (count > 0) json += ",";
-      char hexBuf[10];
-      snprintf(hexBuf, sizeof(hexBuf), "\"0x%02X\"", addr);
-      json += hexBuf;
-      count++;
-    }
-  }
-  json += "],\"pca_found\":" + String(isPCAFound() ? "true" : "false") + "}";
+  String json;
+  scanI2CDevices(json);
   server.send(200, "application/json", json);
 }
 
@@ -142,20 +130,19 @@ static void handleCommand() {
     out = "Continuous Dynamic Walk Started";
   } else if (cmd == "step") {
     executeSingleStep();
-    out = "Single Stride Completed";
+    out = "Single Stride Routine Initiated";
   } else if (cmd == "takestep" || cmd == "ref_step") {
     takeStep(1.6f, 20);
-    stopLocomotion();
-    out = "Reference takeStep Completed";
+    out = "Reference takeStep Routine Initiated";
   } else if (cmd == "init" || cmd == "initialize") {
     initialize();
-    out = "Reference initialize Completed";
+    out = "Leg Extension Routine Initiated";
   } else if (cmd == "stop" || cmd == "stand" || cmd == "park") {
     stopLocomotion();
     out = "Robot Parked in Stand Neutral";
   } else if (cmd == "diag" || cmd == "test") {
     runJointDiagnostics();
-    out = "Diagnostics Sweep Completed";
+    out = "Diagnostics Sweep Initiated";
   } else if (cmd == "march") {
     startLocomotion("march");
     out = "In-Place March Started";
@@ -173,7 +160,7 @@ static void handleCommand() {
     out = "Walking Backward Started";
   } else if (cmd == "status" || cmd == "telemetry") {
     LocomotionTelemetry t = getLocomotionTelemetry();
-    out = "Gait: " + t.activeGait + " | Contact: " + t.contactState + " | Force: " + String(t.groundForceNewtons, 2) + " N (L:" + String((int)t.weightLeftGrams) + "g, R:" + String((int)t.weightRightGrams) + "g)";
+    out = "Gait: " + String(t.activeGait) + " | Contact: " + String(t.contactState) + " | Force: " + String(t.groundForceNewtons, 2) + " N (L:" + String((int)t.weightLeftGrams) + "g, R:" + String((int)t.weightRightGrams) + "g)";
   } else if (cmd == "help" || cmd == "?") {
     out = "Commands: walk, step, stop, diag, march, crouch, left, right, backward, status, init";
   } else {

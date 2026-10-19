@@ -24,9 +24,12 @@ struct JointState {
 bool initPCA();
 bool isPCAFound();
 bool checkPCAConnection();
+bool lockI2C(TickType_t timeoutMs = 25);
+void unlockI2C();
+void scanI2CDevices(String& jsonOutput);
 
 // =============================================================================
-// Servo Actuation & State Accessors
+// Servo Actuation & State Accessors (Thread-Safe)
 // =============================================================================
 // Set angle by PCA9685 channel with safety limits and PWM pulse caching
 void setServoAngle(int channel, float angle);
@@ -34,9 +37,13 @@ void setServoAngle(int channel, float angle);
 // Set angle by JointID enum
 void setJointAngle(JointID id, float angle);
 
-// Access joint states
+// Thread-safe joint state accessors
+bool getJointSnapshot(int index, JointState* out);
+bool getJointSnapshotByID(JointID id, JointState* out);
 JointState* getJoint(int index);
 JointState* getJointByID(JointID id);
+float getJointHomeAngle(JointID id);
+float getJointCurrentAngle(JointID id);
 int getJointIndex(int channel);
 
 // Park all 6 servos strictly in calibrated neutral standing posture
