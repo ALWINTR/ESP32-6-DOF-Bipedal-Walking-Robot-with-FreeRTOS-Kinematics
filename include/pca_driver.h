@@ -6,6 +6,7 @@
 #include <Adafruit_PWMServoDriver.h>
 #include "config.h"
 
+// Real-time joint state tracking
 struct JointState {
   int channel;
   const char* name;
@@ -17,28 +18,33 @@ struct JointState {
   int lastPulseLen;
 };
 
-// Initializes I2C bus @ 400kHz and PCA9685 driver
+// =============================================================================
+// PCA9685 Driver Management & Status
+// =============================================================================
 bool initPCA();
-
-// Returns true if PCA9685 is responsive on the I2C bus
 bool isPCAFound();
-
-// Attempts to reconnect if disconnected
 bool checkPCAConnection();
 
-// Set angle with automatic physical bracket clamping & pulse caching
+// =============================================================================
+// Servo Actuation & State Accessors
+// =============================================================================
+// Set angle by PCA9685 channel with safety limits and PWM pulse caching
 void setServoAngle(int channel, float angle);
 
-// Returns joint state by index (0 to NUM_SERVOS-1)
-JointState* getJoint(int index);
+// Set angle by JointID enum
+void setJointAngle(JointID id, float angle);
 
-// Returns joint index for a PCA9685 channel, or -1 if not found
+// Access joint states
+JointState* getJoint(int index);
+JointState* getJointByID(JointID id);
 int getJointIndex(int channel);
 
-// Parks all 6 servos strictly in calibrated standing neutral posture
+// Park all 6 servos strictly in calibrated neutral standing posture
 void parkNeutralStand();
 
-// NVS Persistent Calibration Storage
+// =============================================================================
+// NVS Flash Calibration Offsets
+// =============================================================================
 void loadNVSJointOffsets();
 void saveNVSJointOffsets();
 void resetNVSJointOffsets();

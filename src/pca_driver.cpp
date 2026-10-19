@@ -1,11 +1,22 @@
 #include "pca_driver.h"
 #include <Preferences.h>
 
+// PCA9685 Hardware Driver Instance
 static Adafruit_PWMServoDriver pwm(PCA9685_I2C_ADDR);
 static Preferences prefs;
 static bool pcaConnected = false;
-static JointState joints[NUM_SERVOS];
+static JointState joints[NUM_JOINTS];
 static SemaphoreHandle_t i2cMutex = NULL;
+
+// NVS Persistent Storage Keys corresponding to JointID enum order
+static const char* NVS_KEYS[NUM_JOINTS] = {
+  "ch0",  // JOINT_R_HIP
+  "ch1",  // JOINT_R_KNEE
+  "ch12", // JOINT_R_FOOT
+  "ch4",  // JOINT_L_HIP
+  "ch8",  // JOINT_L_KNEE
+  "ch15"  // JOINT_L_FOOT
+};
 
 bool initPCA() {
   if (i2cMutex == NULL) {
@@ -24,11 +35,11 @@ bool initPCA() {
       delay(20);
       pcaConnected = true;
 
-      for (int i = 0; i < NUM_SERVOS; i++) {
+      for (int i = 0; i < NUM_JOINTS; i++) {
         joints[i].lastPulseLen = -1;
       }
-      Serial.printf("[PCA9685] Detected and initialized at 0x%02X (%dHz PWM, 400kHz I2C)\n",
-                    PCA9685_I2C_ADDR, PCA9685_PWM_FREQ_HZ);
+      Serial.printf("[PCA9685] Detected and initialized at 0x%02X (%dHz PWM, %dkHz I2C)\n",
+                    PCA9685_I2C_ADDR, PCA9685_PWM_FREQ_HZ, I2C_FREQUENCY_HZ / 1000);
       xSemaphoreGive(i2cMutex);
       return true;
     }
@@ -51,17 +62,21 @@ bool checkPCAConnection() {
 }
 
 int getJointIndex(int channel) {
-  for (int i = 0; i < NUM_SERVOS; i++) {
+  for (int i = 0; i < NUM_JOINTS; i++) {
     if (joints[i].channel == channel) return i;
   }
   return -1;
 }
 
 JointState* getJoint(int index) {
-  if (index >= 0 && index < NUM_SERVOS) {
+  if (index >= 0 && index < NUM_JOINTS) {
     return &joints[index];
   }
   return nullptr;
+}
+
+JointState* getJointByID(JointID id) {
+  return getJoint(static_cast<int>(id));
 }
 
 void setServoAngle(int channel, float angle) {
@@ -71,20 +86,21 @@ void setServoAngle(int channel, float angle) {
 
   int idx = getJointIndex(channel);
   if (idx != -1) {
-    // Physical bracket safety clamp
+    // Bracket safety clamping
     angle = constrain(angle, joints[idx].minLimit, joints[idx].maxLimit);
     joints[idx].currentAngle = angle;
   } else {
     angle = constrain(angle, 0.0f, 180.0f);
   }
 
-  // Convert degrees to microseconds (544us to 2400us)
+  // Convert angle (0-180°) to pulse microseconds (SERVOMIN_US to SERVOMAX_US)
   float us = SERVOMIN_US + (angle / 180.0f) * (SERVOMAX_US - SERVOMIN_US);
   // Convert microseconds to 12-bit PCA9685 tick count (20ms cycle @ 50Hz)
-  int pulselen = (int)round((us * 4096.0f) / 20000.0f);
+  int pulselen = static_cast<int>(round((us * 4096.0f) / 20000.0f));
 
+  // Pulse caching: skip redundant I2C writes if angle hasn't changed
   if (idx != -1 && joints[idx].lastPulseLen == pulselen) {
-    return; // Already at exact PWM pulse length - zero bus traffic
+    return;
   }
 
   if (i2cMutex && xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(15)) == pdTRUE) {
@@ -94,16 +110,22 @@ void setServoAngle(int channel, float angle) {
   }
 }
 
+void setJointAngle(JointID id, float angle) {
+  if (id >= 0 && id < NUM_JOINTS) {
+    setServoAngle(joints[id].channel, angle);
+  }
+}
+
 void parkNeutralStand() {
-  for (int i = 0; i < NUM_SERVOS; i++) {
+  for (int i = 0; i < NUM_JOINTS; i++) {
     joints[i].targetAngle = joints[i].homeAngle;
     setServoAngle(joints[i].channel, joints[i].homeAngle);
   }
 }
 
 void loadNVSJointOffsets() {
-  // Initialize joint array from config defaults first
-  for (int i = 0; i < NUM_SERVOS; i++) {
+  // 1. Initialize joint structures with compiled factory baselines
+  for (int i = 0; i < NUM_JOINTS; i++) {
     joints[i].channel      = DEFAULT_JOINTS[i].channel;
     joints[i].name         = DEFAULT_JOINTS[i].name;
     joints[i].homeAngle    = DEFAULT_JOINTS[i].homeAngle;
@@ -114,18 +136,12 @@ void loadNVSJointOffsets() {
     joints[i].lastPulseLen = -1;
   }
 
+  // 2. Load stored calibrations from NVS flash if present
   prefs.begin("biped_chmap", true); // read-only
-  // Check if saved offsets exist
   if (prefs.isKey("ch0")) {
-    joints[0].homeAngle = prefs.getFloat("ch0",  DEFAULT_JOINTS[0].homeAngle);
-    joints[1].homeAngle = prefs.getFloat("ch1",  DEFAULT_JOINTS[1].homeAngle);
-    joints[2].homeAngle = prefs.getFloat("ch12", DEFAULT_JOINTS[2].homeAngle);
-    joints[3].homeAngle = prefs.getFloat("ch4",  DEFAULT_JOINTS[3].homeAngle);
-    joints[4].homeAngle = prefs.getFloat("ch8",  DEFAULT_JOINTS[4].homeAngle);
-    joints[5].homeAngle = prefs.getFloat("ch15", DEFAULT_JOINTS[5].homeAngle);
-
-    for (int i = 0; i < NUM_SERVOS; i++) {
-      joints[i].homeAngle = constrain(joints[i].homeAngle, joints[i].minLimit, joints[i].maxLimit);
+    for (int i = 0; i < NUM_JOINTS; i++) {
+      float savedVal = prefs.getFloat(NVS_KEYS[i], DEFAULT_JOINTS[i].homeAngle);
+      joints[i].homeAngle    = constrain(savedVal, joints[i].minLimit, joints[i].maxLimit);
       joints[i].currentAngle = joints[i].homeAngle;
       joints[i].targetAngle  = joints[i].homeAngle;
     }
@@ -138,15 +154,8 @@ void loadNVSJointOffsets() {
 
 void saveNVSJointOffsets() {
   prefs.begin("biped_chmap", false); // read-write
-  prefs.putFloat("ch0",  joints[0].currentAngle);
-  prefs.putFloat("ch1",  joints[1].currentAngle);
-  prefs.putFloat("ch12", joints[2].currentAngle);
-  prefs.putFloat("ch4",  joints[3].currentAngle);
-  prefs.putFloat("ch8",  joints[4].currentAngle);
-  prefs.putFloat("ch15", joints[5].currentAngle);
-
-  // Update in-memory home angles
-  for (int i = 0; i < NUM_SERVOS; i++) {
+  for (int i = 0; i < NUM_JOINTS; i++) {
+    prefs.putFloat(NVS_KEYS[i], joints[i].currentAngle);
     joints[i].homeAngle = joints[i].currentAngle;
   }
   prefs.end();
@@ -158,7 +167,7 @@ void resetNVSJointOffsets() {
   prefs.clear();
   prefs.end();
 
-  for (int i = 0; i < NUM_SERVOS; i++) {
+  for (int i = 0; i < NUM_JOINTS; i++) {
     joints[i].homeAngle    = DEFAULT_JOINTS[i].homeAngle;
     joints[i].currentAngle = DEFAULT_JOINTS[i].homeAngle;
     joints[i].targetAngle  = DEFAULT_JOINTS[i].homeAngle;

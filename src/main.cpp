@@ -5,9 +5,9 @@
 #include "web_server.h"
 
 // =============================================================================
-// FreeRTOS Dedicated Real-Time Locomotion Task (Core 1)
-// Runs strictly at 50Hz (every 20ms) with deterministic microsecond precision.
-// Fully isolated from WiFi/network interrupts on Core 0.
+// FreeRTOS Dedicated Real-Time Locomotion Task (Pinned to Core 1)
+// Runs strictly at 50Hz (20ms period) with deterministic timing.
+// Fully isolated from WiFi/Network processing on Core 0.
 // =============================================================================
 void locomotionTask(void* pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -20,8 +20,8 @@ void locomotionTask(void* pvParameters) {
 }
 
 // =============================================================================
-// USB Serial Command Listener
-// Allows 100% control over USB cable even without any WiFi connection!
+// USB Serial Command Interface
+// Provides instant offline control directly via Serial Monitor (115200 baud).
 // =============================================================================
 void handleSerialCommands() {
   if (!Serial.available()) return;
@@ -61,7 +61,7 @@ void handleSerialCommands() {
                   t.activeGait.c_str(), t.isRunning ? "YES" : "NO", t.contactState.c_str(),
                   t.groundForceNewtons, t.weightLeftGrams, t.weightRightGrams);
     Serial.print("  Angles: ");
-    for (int i = 0; i < NUM_SERVOS; i++) {
+    for (int i = 0; i < NUM_JOINTS; i++) {
       JointState* j = getJoint(i);
       if (j) Serial.printf("[CH%d %s: %.1f°] ", j->channel, j->name, j->currentAngle);
     }
@@ -79,7 +79,7 @@ void handleSerialCommands() {
 }
 
 // =============================================================================
-// PlatformIO Setup & Main Loop
+// PlatformIO System Setup & Event Loop
 // =============================================================================
 void setup() {
   Serial.begin(115200);
@@ -87,7 +87,7 @@ void setup() {
 
   Serial.println("\n========================================================");
   Serial.println("🤖 ESP32 6-DOF Bipedal Walking Robot Controller");
-  Serial.println("   Architecture: PlatformIO (Core 1 Locomotion + Core 0 Network)");
+  Serial.println("   Architecture: Dual-Core FreeRTOS (Core 1 Kinematics + Core 0 Network)");
   Serial.println("========================================================\n");
 
   // 1. Load NVS Calibrated Offsets

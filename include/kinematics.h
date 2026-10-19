@@ -5,6 +5,7 @@
 #include "config.h"
 #include "pca_driver.h"
 
+// Telemetry state for monitoring ground reaction force and contact status
 struct LocomotionTelemetry {
   float weightLeftGrams;
   float weightRightGrams;
@@ -14,36 +15,37 @@ struct LocomotionTelemetry {
   bool isRunning;
 };
 
-// Initializes the kinematics engine
-void initKinematics();
-
-// Called periodically (strictly at 50Hz / 20ms) by FreeRTOS locomotion task
-void updateLocomotion(float dt);
-
-// Locomotion commands
-void startLocomotion(const String& gait);
-void stopLocomotion();
-void executeSingleStep();
-void runJointDiagnostics();
-
-// Real-time parameter tuning
-void setGaitParam(const String& param, float val);
-
-// 2D Analytical Inverse Kinematics (from reference code)
+// Analytical 2D Inverse Kinematics solution
 struct IKResult {
   float hipDeg;
   float kneeDeg;
   float ankleDeg;
 };
 
+// =============================================================================
+// Core Kinematics & Locomotion Lifecycle
+// =============================================================================
+void initKinematics();
+void updateLocomotion(float dt);
+void startLocomotion(const String& gait);
+void stopLocomotion();
+void setGaitParam(const String& param, float val);
+LocomotionTelemetry getLocomotionTelemetry();
+
+// =============================================================================
+// Kinematic Solving & Coordinated Actuation
+// =============================================================================
 IKResult solveIK(float x, float z);
+void updateAllJoints(float xr, float zr, float xl, float zl);
 void pos(float x, float z, char leg);
 void updateServoPos(float dHip, float dKnee, float dAnkle, char leg, bool isSwing = false);
-void updateAllJoints(float xr, float zr, float xl, float zl);
-void takeStep(float stepLength, int stepVelocity);
-void initialize();
 
-// Telemetry accessor
-LocomotionTelemetry getLocomotionTelemetry();
+// =============================================================================
+// High-Level Trajectory Routines & Diagnostics
+// =============================================================================
+void executeSingleStep();
+void runJointDiagnostics();
+void takeStep(float sLength, int stepVelocity);
+void initialize();
 
 #endif // KINEMATICS_H

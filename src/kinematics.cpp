@@ -1,6 +1,9 @@
 #include "kinematics.h"
 #include <math.h>
 
+// =============================================================================
+// Static Locomotion & Gait State
+// =============================================================================
 static float walkFreq         = DEFAULT_WALK_FREQ_HZ;
 static float stepLength       = DEFAULT_STEP_LENGTH_CM;
 static float stepClearance    = DEFAULT_STEP_CLEARANCE_CM;
@@ -11,43 +14,14 @@ static float walkTime         = 0.0f;
 static bool  gaitActive       = false;
 static String activeGaitName  = "stand";
 
-// Dynamic Ground Reaction Force & Contact State
+// Real-Time Ground Reaction Force & Contact State
 static float weightLeft       = 250.0f;
 static float weightRight      = 250.0f;
 static float groundForceN     = 4.905f;
 static String contactState    = "DUAL STANCE";
 
-void initKinematics() {
-  currentGaitScale = 0.0f;
-  walkTime         = 0.0f;
-  gaitActive       = false;
-  activeGaitName   = "stand";
-  weightLeft       = 250.0f;
-  weightRight      = 250.0f;
-  groundForceN     = 4.905f;
-  contactState     = "DUAL STANCE";
-}
-
-void startLocomotion(const String& gait) {
-  gaitActive = true;
-  activeGaitName = gait;
-  currentGaitScale = 0.0f; // Smooth ease-in from standing posture
-  walkTime = 0.0f;
-}
-
-void stopLocomotion() {
-  gaitActive = false;
-  activeGaitName = "stand";
-  currentGaitScale = 0.0f;
-  parkNeutralStand();
-  weightLeft   = 250.0f;
-  weightRight  = 250.0f;
-  groundForceN = 4.905f;
-  contactState = "DUAL STANCE";
-}
-
 // =============================================================================
-// Analytical 2D Inverse Kinematics Engine (from Reference Code)
+// 1. Analytical 2D Inverse Kinematics Engine
 // Links: Thigh l1 = 5.0cm, Shin l2 = 5.7cm, Max Extended Height = 10.7cm
 // =============================================================================
 IKResult solveIK(float x, float z) {
@@ -57,15 +31,21 @@ IKResult solveIK(float x, float z) {
 
   float z2 = sqrt(x * x + z * z);
 
-  float val1 = constrain((sq(LINK_THIGH_L1_CM) + sq(z2) - sq(LINK_SHIN_L2_CM)) / (2.0f * LINK_THIGH_L1_CM * z2), -1.0f, 1.0f);
+  // Law of Cosines for Hip angle
+  float val1 = constrain((sq(LINK_THIGH_L1_CM) + sq(z2) - sq(LINK_SHIN_L2_CM)) /
+                         (2.0f * LINK_THIGH_L1_CM * z2), -1.0f, 1.0f);
   float hipRad1 = acos(val1);
   float hipDeg1 = hipRad1 * (180.0f / (float)M_PI);
 
-  float val2 = constrain((sq(LINK_THIGH_L1_CM) + sq(LINK_SHIN_L2_CM) - sq(z2)) / (2.0f * LINK_THIGH_L1_CM * LINK_SHIN_L2_CM), -1.0f, 1.0f);
+  // Law of Cosines for Knee angle
+  float val2 = constrain((sq(LINK_THIGH_L1_CM) + sq(LINK_SHIN_L2_CM) - sq(z2)) /
+                         (2.0f * LINK_THIGH_L1_CM * LINK_SHIN_L2_CM), -1.0f, 1.0f);
   float kneeRad = (float)M_PI - acos(val2);
   float kneeDeg = kneeRad * (180.0f / (float)M_PI);
 
-  float val3 = constrain((sq(LINK_SHIN_L2_CM) + sq(z2) - sq(LINK_THIGH_L1_CM)) / (2.0f * LINK_SHIN_L2_CM * z2), -1.0f, 1.0f);
+  // Law of Cosines for Ankle angle
+  float val3 = constrain((sq(LINK_SHIN_L2_CM) + sq(z2) - sq(LINK_THIGH_L1_CM)) /
+                         (2.0f * LINK_SHIN_L2_CM * z2), -1.0f, 1.0f);
   float ankleRad = ((float)M_PI / 2.0f) + hipRad2 - acos(val3);
   float ankleDeg = ankleRad * (180.0f / (float)M_PI);
 
@@ -75,7 +55,7 @@ IKResult solveIK(float x, float z) {
   return res;
 }
 
-// Zero-Impact Double-Support Swing Lift (Soft parabolic liftoff & touchdown)
+// Zero-Impact Double-Support Swing Lift (Soft parabolic bell curve)
 static inline float calculateSwingClearance(float stepPhase, float sClear) {
   const float ds = 0.15f * (float)M_PI; // 15% double support buffer on each transition (30% total)
   if (stepPhase < ds || stepPhase > ((float)M_PI - ds)) {
@@ -83,28 +63,74 @@ static inline float calculateSwingClearance(float stepPhase, float sClear) {
   }
   float u = (stepPhase - ds) / ((float)M_PI - 2.0f * ds);
   float s = sin(u * (float)M_PI);
-  return sClear * (s * s); // Soft zero-impact bell curve
+  return sClear * (s * s);
+}
+
+// =============================================================================
+// 2. Coordinated Joint Actuation Layer
+// Enforces:
+//   1. Execution Order: FIRST Hips, SECOND Knees, LAST Feet
+//   2. Knee-Hip Coupling: delta_knee = |delta_hip| ONLY during swing
+//   3. Alternating Knees: Stance knee locked 100% straight; both never bend together
+//   4. Foot Constancy: Both feet locked strictly at 94.0° (zero angle change)
+// =============================================================================
+void updateAllJoints(float xr, float zr, float xl, float zl) {
+  IKResult ikR = solveIK(xr, zr);
+  IKResult ikL = solveIK(xl, zl);
+  IKResult nom = solveIK(0.0f, stepHeight);
+
+  float dHipR = ikR.hipDeg - nom.hipDeg;
+  float dHipL = ikL.hipDeg - nom.hipDeg;
+
+  // Swing Detection: Leg is in swing only when lifted off the ground (z < stepHeight - 0.03cm)
+  bool isSwingR = (zr < stepHeight - 0.03f);
+  bool isSwingL = (zl < stepHeight - 0.03f);
+
+  float kneeLiftR = 0.0f;
+  float kneeLiftL = 0.0f;
+
+  if (activeGaitName == "crouch" || activeGaitName == "squat") {
+    // Symmetrical knee flexion for squatting
+    float squat = constrain(nom.kneeDeg - ikR.kneeDeg, 0.0f, MAX_KNEE_LIFT_DEG);
+    kneeLiftR = squat;
+    kneeLiftL = squat;
+  } else {
+    // Knee angle change == Hip angle change ONLY during swing.
+    // Stance leg knee is 100% straight and locked. Both knees NEVER bend at the same time!
+    kneeLiftR = isSwingR ? constrain(fabs(dHipR), 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
+    kneeLiftL = isSwingL ? constrain(fabs(dHipL), 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
+  }
+
+  // 1. FIRST: Both Hips (Primary stride motion)
+  setServoAngle(CH_R_HIP, constrain(R_HIP_HOME + dHipR, R_HIP_MIN, R_HIP_MAX));
+  setServoAngle(CH_L_HIP, constrain(L_HIP_HOME - dHipL, L_HIP_MIN, L_HIP_MAX));
+
+  // 2. SECOND: Both Knees (Strictly alternating swing lift; stance knee locked straight)
+  setServoAngle(CH_R_KNEE, constrain(R_KNEE_HOME + kneeLiftR, R_KNEE_MIN, R_KNEE_MAX));
+  setServoAngle(CH_L_KNEE, constrain(L_KNEE_HOME - kneeLiftL, L_KNEE_MIN, L_KNEE_MAX));
+
+  // 3. LAST: Both Feet strictly CONSTANT at 94.0° (Zero angle change)
+  setServoAngle(CH_R_FOOT, R_FOOT_HOME);
+  setServoAngle(CH_L_FOOT, L_FOOT_HOME);
 }
 
 void updateServoPos(float dHip, float dKnee, float dAnkle, char leg, bool isSwing) {
-  // Knee angle change == Hip angle change ONLY during swing!
-  // In stance (isSwing == false), knee stays strictly straight (lift = 0) to support robot!
-  float kneeLift = isSwing ? constrain(fabs(dHip), 0.0f, 8.5f) : 0.0f;
+  float kneeLift = isSwing ? constrain(fabs(dHip), 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
 
   if (leg == 'l') {
-    // 1. Primary motion: Hip angle changes with stride
-    setServoAngle(4,  constrain(getJoint(3)->homeAngle - dHip,     85.0f, 103.0f));
-    // 2. Knee angle change equals hip angle change ONLY in swing, straight in stance
-    setServoAngle(8,  constrain(getJoint(4)->homeAngle - kneeLift, 85.5f,  94.0f));
-    // 3. Foot: Strictly CONSTANT at default angle (94.0°) - ZERO change!
-    setServoAngle(15, getJoint(5)->homeAngle);
+    // 1. Hip
+    setServoAngle(CH_L_HIP, constrain(L_HIP_HOME - dHip, L_HIP_MIN, L_HIP_MAX));
+    // 2. Knee (Knee lift equals hip delta in swing, straight in stance)
+    setServoAngle(CH_L_KNEE, constrain(L_KNEE_HOME - kneeLift, L_KNEE_MIN, L_KNEE_MAX));
+    // 3. Foot (Strictly constant at 94.0°)
+    setServoAngle(CH_L_FOOT, L_FOOT_HOME);
   } else if (leg == 'r') {
-    // 1. Primary motion: Hip angle changes with stride
-    setServoAngle(0,  constrain(getJoint(0)->homeAngle + dHip,     85.0f, 103.0f));
-    // 2. Knee angle change equals hip angle change ONLY in swing, straight in stance
-    setServoAngle(1,  constrain(getJoint(1)->homeAngle + kneeLift,  8.0f,  16.5f));
-    // 3. Foot: Strictly CONSTANT at default angle (94.0°) - ZERO change!
-    setServoAngle(12, getJoint(2)->homeAngle);
+    // 1. Hip
+    setServoAngle(CH_R_HIP, constrain(R_HIP_HOME + dHip, R_HIP_MIN, R_HIP_MAX));
+    // 2. Knee (Knee lift equals hip delta in swing, straight in stance)
+    setServoAngle(CH_R_KNEE, constrain(R_KNEE_HOME + kneeLift, R_KNEE_MIN, R_KNEE_MAX));
+    // 3. Foot (Strictly constant at 94.0°)
+    setServoAngle(CH_R_FOOT, R_FOOT_HOME);
   }
 }
 
@@ -120,82 +146,9 @@ void pos(float x, float z, char leg) {
   updateServoPos(dHip, dKnee, dAnkle, leg, isSwing);
 }
 
-void updateAllJoints(float xr, float zr, float xl, float zl) {
-  IKResult ikR = solveIK(xr, zr);
-  IKResult ikL = solveIK(xl, zl);
-  IKResult nom = solveIK(0.0f, stepHeight);
-
-  float dHipR = ikR.hipDeg - nom.hipDeg;
-  float dHipL = ikL.hipDeg - nom.hipDeg;
-
-  // STRICT ALTERNATING SWING: ONLY ONE KNEE BENDS AT A TIME!
-  // A leg is in swing ONLY when lifted off the ground (z < stepHeight - 0.03cm).
-  // The stance leg knee is 100% straight and locked to support robot weight.
-  // Both knees NEVER bend at the same time during walking!
-  bool isSwingR = (zr < stepHeight - 0.03f);
-  bool isSwingL = (zl < stepHeight - 0.03f);
-
-  float kneeLiftR = 0.0f;
-  float kneeLiftL = 0.0f;
-
-  if (activeGaitName == "crouch" || activeGaitName == "squat") {
-    float squat = constrain(nom.kneeDeg - ikR.kneeDeg, 0.0f, 8.5f);
-    kneeLiftR = squat;
-    kneeLiftL = squat;
-  } else {
-    kneeLiftR = isSwingR ? constrain(fabs(dHipR), 0.0f, 8.5f) : 0.0f;
-    kneeLiftL = isSwingL ? constrain(fabs(dHipL), 0.0f, 8.5f) : 0.0f;
-  }
-
-  // 1. FIRST: Both Hips (Stride motion)
-  setServoAngle(0, constrain(getJoint(0)->homeAngle + dHipR, 85.0f, 103.0f));
-  setServoAngle(4, constrain(getJoint(3)->homeAngle - dHipL, 85.0f, 103.0f));
-
-  // 2. SECOND: Both Knees (Strictly alternating: only swing knee bends, stance knee straight)
-  setServoAngle(1, constrain(getJoint(1)->homeAngle + kneeLiftR, 8.0f,  16.5f));
-  setServoAngle(8, constrain(getJoint(4)->homeAngle - kneeLiftL, 85.5f, 94.0f));
-
-  // 3. LAST: Both Feet strictly CONSTANT at 94.0° (ZERO change)
-  setServoAngle(12, getJoint(2)->homeAngle); // Exactly 94.0° constant
-  setServoAngle(15, getJoint(5)->homeAngle); // Exactly 94.0° constant
-}
-
-void takeStep(float sLength, int stepVelocity) {
-  int delayMs = (stepVelocity > 0) ? stepVelocity : 20;
-  float sClear = min(0.35f, stepClearance);
-
-  // Phase 1: Right Leg stance (x: +L -> -L), Left Leg swing (x: -L -> +L, soft parabolic arch)
-  for (float i = sLength; i >= -sLength; i -= 0.10f) {
-    float u = (sLength - i) / (2.0f * sLength); // 0.0 to 1.0
-    float lift = sClear * sin(u * (float)M_PI);
-    updateAllJoints(i, stepHeight, -i, stepHeight - lift);
-    delay(delayMs);
-  }
-
-  // Phase 2: Right Leg swing (x: -L -> +L, soft parabolic arch), Left Leg stance (x: +L -> -L)
-  for (float i = sLength; i >= -sLength; i -= 0.10f) {
-    float u = (sLength - i) / (2.0f * sLength); // 0.0 to 1.0
-    float lift = sClear * sin(u * (float)M_PI);
-    updateAllJoints(-i, stepHeight - lift, i, stepHeight);
-    delay(delayMs);
-  }
-
-  // Smooth settle back to neutral stand (x: 0, z: stepHeight)
-  for (float i = sLength; i >= 0.0f; i -= 0.10f) {
-    updateAllJoints(i, stepHeight, -i, stepHeight);
-    delay(delayMs);
-  }
-  parkNeutralStand();
-}
-
-void initialize() {
-  for (float i = 10.7f; i >= stepHeight; i -= 0.05f) {
-    updateAllJoints(0.0f, i, 0.0f, i);
-    delay(15);
-  }
-  parkNeutralStand();
-}
-
+// =============================================================================
+// 3. Real-Time Locomotion Generator (Called at 50Hz by FreeRTOS Task)
+// =============================================================================
 void updateLocomotion(float dt) {
   // Smooth Anti-Jerk Envelope
   if (gaitActive) {
@@ -208,7 +161,7 @@ void updateLocomotion(float dt) {
       currentGaitScale = max(0.0f, currentGaitScale - 0.04f);
       walkTime += dt;
     } else {
-      return; // Fully parked at neutral, zero unnecessary computation
+      return; // Fully settled at neutral baseline
     }
   }
 
@@ -217,7 +170,6 @@ void updateLocomotion(float dt) {
   if (phase < 0.0f) phase += 2.0f * (float)M_PI;
 
   float cosP = cos(phase);
-  float sinP = sin(phase);
 
   float sLength = stepLength * currentGaitScale;
   float sClear  = min(0.35f, stepClearance) * currentGaitScale;
@@ -233,48 +185,43 @@ void updateLocomotion(float dt) {
   float liftR = (phase >= (float)M_PI) ? calculateSwingClearance(phase - (float)M_PI, sClear) : 0.0f;
 
   if (activeGaitName == "backward" || activeGaitName == "back") {
-    // Reverse Stride Walk
     xr = -cosP * sLength;
     xl =  cosP * sLength;
     zr = sHeight - liftR;
     zl = sHeight - liftL;
   } else if (activeGaitName == "march") {
-    // In-Place Dynamic Stepping (high knee lifts, zero forward drift)
     xr = 0.0f;
     xl = 0.0f;
     zr = sHeight - liftR * 1.2f;
     zl = sHeight - liftL * 1.2f;
   } else if (activeGaitName == "turn_left" || activeGaitName == "left") {
-    // Differential Turn Left
     xr =  cosP * sLength;
     xl =  cosP * (sLength * 0.35f);
     zr = sHeight - liftR;
     zl = sHeight - liftL;
   } else if (activeGaitName == "turn_right" || activeGaitName == "right") {
-    // Differential Turn Right
     xr = -cosP * (sLength * 0.35f);
     xl = -cosP * sLength;
     zr = sHeight - liftR;
     zl = sHeight - liftL;
   } else if (activeGaitName == "crouch" || activeGaitName == "squat") {
-    // Symmetrical Squat / Crouch & Rise
     xr = 0.0f;
     xl = 0.0f;
     float squat = (0.5f - 0.5f * cosP) * 1.2f * currentGaitScale;
     zr = sHeight - squat;
     zl = sHeight - squat;
   } else {
-    // Default Dynamic Forward Walk ("walk", "forward", etc.)
+    // Default Forward Dynamic Walk
     xr =  cosP * sLength;
     xl = -cosP * sLength;
     zr = sHeight - liftR;
     zl = sHeight - liftL;
   }
 
-  // Direct Kinematics execution: FIRST Hips, SECOND Knees, LAST Feet
+  // Actuate joints in strict sequence: Hips -> Knees -> Feet
   updateAllJoints(xr, zr, xl, zl);
 
-  // Real-Time Dynamic Ground Reaction Force Telemetry
+  // Dynamic Ground Reaction Force & Support State Telemetry
   if (currentGaitScale > 0.10f) {
     if (liftL > 0.05f) {
       weightRight = min(500.0f, ROBOT_TOTAL_WEIGHT_GRAMS * (0.85f + 0.15f * (liftL / sClear)));
@@ -297,6 +244,9 @@ void updateLocomotion(float dt) {
   groundForceN = (weightLeft + weightRight) * 0.00981f;
 }
 
+// =============================================================================
+// 4. Diagnostics & High-Level Stepping Routines
+// =============================================================================
 void executeSingleStep() {
   parkNeutralStand();
   delay(100);
@@ -304,10 +254,10 @@ void executeSingleStep() {
   activeGaitName = "step";
   float period = 1.0f / walkFreq;
   unsigned long t0 = millis();
-  unsigned long durationMs = (unsigned long)(period * 1000.0f);
+  unsigned long durationMs = static_cast<unsigned long>(period * 1000.0f);
 
   while (millis() - t0 < durationMs) {
-    float u = (float)(millis() - t0) / (float)durationMs;
+    float u = static_cast<float>(millis() - t0) / static_cast<float>(durationMs);
     currentGaitScale = sin(u * (float)M_PI); // Smooth half-sine window: 0 -> 1 -> 0
     walkTime = u * period;
     updateLocomotion(0.020f);
@@ -321,27 +271,94 @@ void runJointDiagnostics() {
   delay(300);
 
   // Right Hip (CH 0): 94° -> 98° -> 94° (Forward swing)
-  setServoAngle(0, 98.0f); delay(800);
-  setServoAngle(0, 94.0f); delay(400);
+  setServoAngle(CH_R_HIP, 98.0f); delay(800);
+  setServoAngle(CH_R_HIP, R_HIP_HOME); delay(400);
 
   // Right Knee (CH 1): 8° -> 10.5° -> 8° (Safe clearance gap)
-  setServoAngle(1, 10.5f); delay(800);
-  setServoAngle(1, 8.0f);  delay(400);
-
+  setServoAngle(CH_R_KNEE, 10.5f); delay(800);
+  setServoAngle(CH_R_KNEE, R_KNEE_HOME); delay(400);
 
   // Left Hip (CH 4): 94° -> 90° -> 94° (Forward swing)
-  setServoAngle(4, 90.0f); delay(800);
-  setServoAngle(4, 94.0f); delay(400);
+  setServoAngle(CH_L_HIP, 90.0f); delay(800);
+  setServoAngle(CH_L_HIP, L_HIP_HOME); delay(400);
 
   // Left Knee (CH 8): 94° -> 91.5° -> 94° (Safe clearance gap)
-  setServoAngle(8, 91.5f); delay(800);
-  setServoAngle(8, 94.0f); delay(400);
+  setServoAngle(CH_L_KNEE, 91.5f); delay(800);
+  setServoAngle(CH_L_KNEE, L_KNEE_HOME); delay(400);
 
   // Feet stay strictly constant at 94.0°
-  setServoAngle(12, 94.0f);
-  setServoAngle(15, 94.0f);
+  setServoAngle(CH_R_FOOT, R_FOOT_HOME);
+  setServoAngle(CH_L_FOOT, L_FOOT_HOME);
 
   parkNeutralStand();
+}
+
+void takeStep(float sLength, int stepVelocity) {
+  int delayMs = (stepVelocity > 0) ? stepVelocity : 20;
+  float sClear = min(0.35f, stepClearance);
+
+  // Phase 1: Right Leg stance, Left Leg swing
+  for (float i = sLength; i >= -sLength; i -= 0.10f) {
+    float u = (sLength - i) / (2.0f * sLength);
+    float lift = sClear * sin(u * (float)M_PI);
+    updateAllJoints(i, stepHeight, -i, stepHeight - lift);
+    delay(delayMs);
+  }
+
+  // Phase 2: Right Leg swing, Left Leg stance
+  for (float i = sLength; i >= -sLength; i -= 0.10f) {
+    float u = (sLength - i) / (2.0f * sLength);
+    float lift = sClear * sin(u * (float)M_PI);
+    updateAllJoints(-i, stepHeight - lift, i, stepHeight);
+    delay(delayMs);
+  }
+
+  // Settle back to neutral
+  for (float i = sLength; i >= 0.0f; i -= 0.10f) {
+    updateAllJoints(i, stepHeight, -i, stepHeight);
+    delay(delayMs);
+  }
+  parkNeutralStand();
+}
+
+void initialize() {
+  for (float i = MAX_LEG_EXTENSION_CM; i >= stepHeight; i -= 0.05f) {
+    updateAllJoints(0.0f, i, 0.0f, i);
+    delay(15);
+  }
+  parkNeutralStand();
+}
+
+// =============================================================================
+// 5. Lifecycle, Tuning & Telemetry Interface
+// =============================================================================
+void initKinematics() {
+  currentGaitScale = 0.0f;
+  walkTime         = 0.0f;
+  gaitActive       = false;
+  activeGaitName   = "stand";
+  weightLeft       = 250.0f;
+  weightRight      = 250.0f;
+  groundForceN     = 4.905f;
+  contactState     = "DUAL STANCE";
+}
+
+void startLocomotion(const String& gait) {
+  gaitActive = true;
+  activeGaitName = gait;
+  currentGaitScale = 0.0f;
+  walkTime = 0.0f;
+}
+
+void stopLocomotion() {
+  gaitActive = false;
+  activeGaitName = "stand";
+  currentGaitScale = 0.0f;
+  parkNeutralStand();
+  weightLeft   = 250.0f;
+  weightRight  = 250.0f;
+  groundForceN = 4.905f;
+  contactState = "DUAL STANCE";
 }
 
 void setGaitParam(const String& param, float val) {
@@ -352,7 +369,7 @@ void setGaitParam(const String& param, float val) {
   } else if (param == "knee" || param == "clearance" || param == "lift") {
     stepClearance = constrain(val, 0.2f, 2.0f);
   } else if (param == "height" || param == "stance") {
-    stepHeight = constrain(val, 8.5f, 10.7f);
+    stepHeight = constrain(val, 8.5f, MAX_LEG_EXTENSION_CM);
   }
 }
 

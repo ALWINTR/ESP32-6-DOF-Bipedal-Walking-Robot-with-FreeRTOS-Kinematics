@@ -13,6 +13,9 @@
 static WebServer server(80);
 static WiFiMulti wifiMulti;
 
+// =============================================================================
+// HTTP Route Handlers
+// =============================================================================
 static void handleRoot() {
   server.send_P(200, "text/html", INDEX_HTML);
 }
@@ -20,11 +23,11 @@ static void handleRoot() {
 static void handleGetAngles() {
   LocomotionTelemetry telem = getLocomotionTelemetry();
   String json = "{\"angles\":{";
-  for (int i = 0; i < NUM_SERVOS; i++) {
+  for (int i = 0; i < NUM_JOINTS; i++) {
     JointState* j = getJoint(i);
     if (j) {
       json += "\"" + String(j->channel) + "\":" + String((int)round(j->currentAngle));
-      if (i < NUM_SERVOS - 1) json += ",";
+      if (i < NUM_JOINTS - 1) json += ",";
     }
   }
   json += "},\"active_gait\":\"" + telem.activeGait + "\"";
@@ -77,7 +80,7 @@ static void handleSetServo() {
   int ch = server.arg("ch").toInt();
   float val = server.arg("val").toFloat();
 
-  stopLocomotion(); // Switch to manual control
+  stopLocomotion(); // Pause autonomous gaits during manual joint adjustment
   setServoAngle(ch, val);
   server.send(200, "application/json", "{\"status\":\"ok\"}");
 }
@@ -120,11 +123,14 @@ static void handleScanI2C() {
   server.send(200, "application/json", json);
 }
 
+// =============================================================================
+// Web Server & Network Initialization
+// =============================================================================
 void initWebServer() {
-  // 1. Enable Dual Mode (Station + SoftAP)
+  // 1. Dual Mode: Station + SoftAP
   WiFi.mode(WIFI_AP_STA);
 
-  // 2. Always launch SoftAP with guaranteed static IP 192.168.4.1
+  // 2. Autonomous SoftAP (Always active fallback: 192.168.4.1)
   WiFi.softAP(AP_SSID, AP_PASS);
   Serial.println("\n[WiFi] SoftAP Started!");
   Serial.printf("  SSID: %s | PASS: %s\n", AP_SSID, AP_PASS);
