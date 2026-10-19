@@ -37,6 +37,10 @@ static void handleGetAngles() {
   json += ",\"weight_r\":" + String(telem.weightRightGrams, 1);
   json += ",\"force_n\":" + String(telem.groundForceNewtons, 2);
   json += ",\"contact\":\"" + telem.contactState + "\"";
+  json += ",\"heap\":" + String(ESP.getFreeHeap());
+  json += ",\"uptime\":" + String(millis() / 1000);
+  json += ",\"rssi\":" + String(WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : 0);
+  json += ",\"ip\":\"" + (WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() : WiFi.softAPIP().toString()) + "\"";
   json += "}";
   server.send(200, "application/json", json);
 }
@@ -123,6 +127,62 @@ static void handleScanI2C() {
   server.send(200, "application/json", json);
 }
 
+static void handleCommand() {
+  if (!server.hasArg("c")) {
+    server.send(400, "application/json", "{\"error\":\"Missing command argument c\"}");
+    return;
+  }
+  String cmd = server.arg("c");
+  cmd.trim();
+  cmd.toLowerCase();
+  String out = "";
+
+  if (cmd == "walk" || cmd == "start" || cmd == "forward") {
+    startLocomotion("walk");
+    out = "Continuous Dynamic Walk Started";
+  } else if (cmd == "step") {
+    executeSingleStep();
+    out = "Single Stride Completed";
+  } else if (cmd == "takestep" || cmd == "ref_step") {
+    takeStep(1.6f, 20);
+    stopLocomotion();
+    out = "Reference takeStep Completed";
+  } else if (cmd == "init" || cmd == "initialize") {
+    initialize();
+    out = "Reference initialize Completed";
+  } else if (cmd == "stop" || cmd == "stand" || cmd == "park") {
+    stopLocomotion();
+    out = "Robot Parked in Stand Neutral";
+  } else if (cmd == "diag" || cmd == "test") {
+    runJointDiagnostics();
+    out = "Diagnostics Sweep Completed";
+  } else if (cmd == "march") {
+    startLocomotion("march");
+    out = "In-Place March Started";
+  } else if (cmd == "crouch" || cmd == "squat") {
+    startLocomotion("crouch");
+    out = "Symmetrical Crouch/Squat Started";
+  } else if (cmd == "left") {
+    startLocomotion("left");
+    out = "Turning Left Started";
+  } else if (cmd == "right") {
+    startLocomotion("right");
+    out = "Turning Right Started";
+  } else if (cmd == "backward" || cmd == "back") {
+    startLocomotion("backward");
+    out = "Walking Backward Started";
+  } else if (cmd == "status" || cmd == "telemetry") {
+    LocomotionTelemetry t = getLocomotionTelemetry();
+    out = "Gait: " + t.activeGait + " | Contact: " + t.contactState + " | Force: " + String(t.groundForceNewtons, 2) + " N (L:" + String((int)t.weightLeftGrams) + "g, R:" + String((int)t.weightRightGrams) + "g)";
+  } else if (cmd == "help" || cmd == "?") {
+    out = "Commands: walk, step, stop, diag, march, crouch, left, right, backward, status, init";
+  } else {
+    startLocomotion(cmd);
+    out = "Executed gait command: " + cmd;
+  }
+  server.send(200, "application/json", "{\"status\":\"ok\",\"output\":\"" + out + "\"}");
+}
+
 // =============================================================================
 // Web Server & Network Initialization
 // =============================================================================
@@ -173,6 +233,7 @@ void initWebServer() {
   server.on("/save_offsets", handleSaveOffsets);
   server.on("/reset_offsets", handleResetOffsets);
   server.on("/scan_i2c", handleScanI2C);
+  server.on("/cmd", handleCommand);
 
   server.begin();
   Serial.println("[HTTP] Web Server Started on Port 80!\n");

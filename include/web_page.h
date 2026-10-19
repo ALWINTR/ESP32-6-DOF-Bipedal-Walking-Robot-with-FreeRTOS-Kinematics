@@ -13,7 +13,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
   <style>
     :root {
       --bg-dark: #070b14;
-      --bg-card: rgba(15, 23, 42, 0.72);
+      --bg-card: rgba(15, 23, 42, 0.75);
       --bg-card-hover: rgba(30, 41, 59, 0.85);
       --border-card: rgba(56, 189, 248, 0.16);
       --border-card-active: rgba(56, 189, 248, 0.5);
@@ -40,7 +40,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       flex-direction: column;
       align-items: center;
     }
-    .container { width: 100%; max-width: 920px; display: flex; flex-direction: column; gap: 14px; }
+    .container { width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: 14px; }
 
     /* Top HUD Header */
     header {
@@ -53,13 +53,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.45);
     }
     .brand-box { display: flex; align-items: center; gap: 12px; }
     .brand-icon {
-      width: 40px; height: 40px; border-radius: 12px;
+      width: 42px; height: 42px; border-radius: 12px;
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
-      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+      display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
       box-shadow: 0 0 18px rgba(6, 182, 212, 0.45);
     }
     .brand-title {
@@ -75,6 +77,16 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
     .dot-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-emerald); box-shadow: 0 0 10px var(--accent-emerald); animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+    /* Extended System Stats Ribbon */
+    .system-ribbon {
+      background: rgba(0,0,0,0.35); border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm); padding: 7px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 8px; font-size: 0.72rem; font-weight: 700;
+    }
+    .ribbon-item { display: flex; align-items: center; gap: 5px; color: var(--text-muted); }
+    .ribbon-val { font-family: ui-monospace, monospace; font-weight: 900; color: #fff; }
 
     /* Cards */
     .card {
@@ -92,6 +104,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     .card-header {
       display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 9px;
+      flex-wrap: wrap; gap: 8px;
     }
     .card-title { font-size: 0.92rem; font-weight: 900; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
     .tab-pills { display: flex; gap: 6px; }
@@ -125,7 +138,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       background: rgba(6,182,212,0.22); border-color: var(--accent-cyan);
       color: var(--accent-cyan); box-shadow: 0 0 15px rgba(6,182,212,0.35); transform: translateY(-1px);
     }
-    .dpad-btn:active { transform: scale(0.92); }
+    .dpad-btn:active, .dpad-btn.pressed { transform: scale(0.92); background: var(--accent-cyan); color: #000; }
     .dpad-btn span { font-size: 0.58rem; font-weight: 800; text-transform: uppercase; margin-top: 2px; }
     .d-up { grid-column: 2; grid-row: 1; }
     .d-left { grid-column: 1; grid-row: 2; }
@@ -133,7 +146,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       grid-column: 2; grid-row: 2; background: rgba(244,63,94,0.22);
       border-color: var(--accent-rose); color: #fda4af; box-shadow: 0 0 12px rgba(244,63,94,0.3);
     }
-    .d-stop:hover { background: var(--accent-rose); color: #fff; }
+    .d-stop:hover, .d-stop.pressed { background: var(--accent-rose); color: #fff; }
     .d-right { grid-column: 3; grid-row: 2; }
     .d-down { grid-column: 2; grid-row: 3; }
 
@@ -193,6 +206,84 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     .nudge-btn:active { transform: scale(0.92); }
     .nudge-home { background: rgba(16,185,129,0.18); border-color: var(--accent-emerald); color: #6ee7b7; }
     .nudge-home:hover { background: var(--accent-emerald); color: #000; }
+
+    /* Real-Time Joint Oscilloscope Canvas */
+    .scope-box {
+      width: 100%; height: 180px; position: relative;
+      background: #050811; border-radius: var(--radius-sm); border: 1px solid rgba(56,189,248,0.2);
+      overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    }
+    #scope-canvas { width: 100%; height: 100%; display: block; }
+    .scope-legend {
+      position: absolute; top: 8px; right: 10px; display: flex; gap: 10px;
+      background: rgba(0,0,0,0.65); padding: 4px 8px; border-radius: 6px; font-size: 0.68rem; font-weight: 800;
+    }
+    .legend-tag { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Interactive Web Terminal */
+    .terminal-container {
+      background: #030712; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm); overflow: hidden; display: flex; flex-direction: column;
+    }
+    .terminal-header {
+      background: rgba(255,255,255,0.04); padding: 7px 12px; display: flex;
+      justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .terminal-title { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); font-family: ui-monospace, monospace; }
+    .terminal-output {
+      height: 140px; overflow-y: auto; padding: 10px; font-family: ui-monospace, monospace;
+      font-size: 0.75rem; color: #38bdf8; line-height: 1.45; display: flex; flex-direction: column; gap: 3px;
+    }
+    .log-line { display: flex; gap: 8px; word-break: break-all; }
+    .log-time { color: var(--text-muted); font-size: 0.68rem; }
+    .terminal-input-bar {
+      display: flex; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.3);
+    }
+    .term-prompt { padding: 8px 10px; color: var(--accent-emerald); font-weight: 900; font-family: ui-monospace, monospace; }
+    .term-input {
+      flex: 1; background: transparent; border: none; outline: none; color: #fff;
+      font-family: ui-monospace, monospace; font-size: 0.8rem; padding: 8px 0;
+    }
+    .term-btn {
+      background: rgba(56,189,248,0.15); border: none; border-left: 1px solid var(--border-card);
+      color: var(--accent-sky); font-weight: 800; font-size: 0.72rem; padding: 0 14px; cursor: pointer;
+    }
+    .term-chips { display: flex; gap: 6px; padding: 6px 10px; background: rgba(0,0,0,0.5); flex-wrap: wrap; }
+    .term-chip {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border-card); color: var(--text-muted);
+      font-size: 0.66rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; cursor: pointer;
+    }
+    .term-chip:hover { color: var(--accent-sky); border-color: var(--accent-sky); }
+
+    /* Motion Choreographer & Routines */
+    .stunt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; width: 100%; }
+    .stunt-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm); padding: 10px; cursor: pointer; display: flex; flex-direction: column;
+      gap: 4px; transition: all 0.15s;
+    }
+    .stunt-card:hover {
+      background: rgba(255,255,255,0.07); border-color: var(--accent-violet); transform: translateY(-1px);
+    }
+    .stunt-title { font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; justify-content: space-between; color: #c4b5fd; }
+    .stunt-desc { font-size: 0.66rem; color: var(--text-muted); }
+
+    /* Keyframe Timeline Bar */
+    .timeline-bar {
+      display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3);
+      padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-card);
+      flex-wrap: wrap;
+    }
+
+    /* Keyboard Hotkeys HUD */
+    .keys-hud { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .key-badge {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 5px; padding: 3px 6px; font-size: 0.65rem; font-weight: 900;
+      font-family: ui-monospace, monospace; color: var(--text-muted); transition: all 0.1s;
+    }
+    .key-badge.pressed { background: var(--accent-sky); color: #000; border-color: var(--accent-sky); transform: translateY(1px); }
 
     /* Telemetry Grid */
     .telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; width: 100%; }
@@ -274,11 +365,11 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     .tuner-val { font-size: 0.9rem; font-weight: 900; color: var(--accent-sky); font-family: ui-monospace, monospace; }
 
     /* Footer System Actions */
-    .sys-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; width: 100%; }
+    .sys-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; width: 100%; }
     .btn-sys {
       background: rgba(255,255,255,0.05); border: 1px solid var(--border-card);
-      color: var(--text-main); font-weight: 800; padding: 11px; border-radius: var(--radius-sm);
-      cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px;
+      color: var(--text-main); font-weight: 800; padding: 10px; border-radius: var(--radius-sm);
+      cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: all 0.15s;
     }
     .btn-sys:active { transform: scale(0.98); }
@@ -288,6 +379,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     .btn-restore:hover { background: var(--accent-rose); color: #fff; }
     .btn-scan { border-color: var(--accent-sky); background: rgba(56,189,248,0.15); color: #7dd3fc; }
     .btn-scan:hover { background: var(--accent-sky); color: #000; }
+    .btn-export { border-color: var(--accent-violet); background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    .btn-export:hover { background: var(--accent-violet); color: #000; }
 
     /* Toast Notification */
     #toast {
@@ -323,8 +416,58 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         <div class="hud-badge" style="color: var(--accent-emerald);">
           <span id="hud-active-gait">STAND</span>
         </div>
+        <div class="hud-badge" id="hud-ping-badge" style="color: var(--accent-cyan);">
+          <span>Ping: <span id="hud-ping">--</span>ms</span>
+        </div>
       </div>
     </header>
+
+    <!-- Extended System Diagnostics Ribbon -->
+    <div class="system-ribbon">
+      <div class="ribbon-item">
+        <span>💾 Free RAM:</span>
+        <span class="ribbon-val" id="stat-heap">-- KB</span>
+      </div>
+      <div class="ribbon-item">
+        <span>⏱️ Uptime:</span>
+        <span class="ribbon-val" id="stat-uptime">00:00:00</span>
+      </div>
+      <div class="ribbon-item">
+        <span>📶 WiFi RSSI:</span>
+        <span class="ribbon-val" id="stat-rssi">-- dBm</span>
+      </div>
+      <div class="ribbon-item">
+        <span>🌐 Host IP:</span>
+        <span class="ribbon-val" id="stat-ip">192.168.4.1</span>
+      </div>
+      <div class="ribbon-item">
+        <span>🎮 Gamepad:</span>
+        <span class="ribbon-val" id="stat-gamepad" style="color: var(--text-muted);">DISCONNECTED</span>
+      </div>
+    </div>
+
+    <!-- Live Motion Oscilloscope (Canvas Waveform) -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📈</span>
+          <span>REAL-TIME JOINT TRAJECTORY OSCILLOSCOPE</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="tab-pill" id="btn-scope-pause" onclick="toggleScope()">Pause</button>
+          <button class="tab-pill" onclick="clearScope()">Clear</button>
+        </div>
+      </div>
+      <div class="scope-box">
+        <canvas id="scope-canvas"></canvas>
+        <div class="scope-legend">
+          <div class="legend-tag"><div class="legend-dot" style="background: #f59e0b;"></div><span>R.Hip</span></div>
+          <div class="legend-tag"><div class="legend-dot" style="background: #06b6d4;"></div><span>L.Hip</span></div>
+          <div class="legend-tag"><div class="legend-dot" style="background: #eab308;"></div><span>R.Knee</span></div>
+          <div class="legend-tag"><div class="legend-dot" style="background: #3b82f6;"></div><span>L.Knee</span></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Interactive Schematic Card -->
     <section class="card">
@@ -491,51 +634,113 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <section class="card">
       <div class="card-header">
         <div class="card-title"><span>🎮</span><span>MOTION COMMANDER & GAIT CONTROL</span></div>
+        <div class="keys-hud">
+          <span class="key-badge" id="key-w">W: Fwd</span>
+          <span class="key-badge" id="key-a">A: Left</span>
+          <span class="key-badge" id="key-s">S: Back</span>
+          <span class="key-badge" id="key-d">D: Right</span>
+          <span class="key-badge" id="key-space">Space: Stop</span>
+        </div>
       </div>
       <div class="motion-grid">
         <!-- D-Pad -->
         <div class="dpad-wrapper">
           <div class="dpad">
-            <button class="dpad-btn d-up" onclick="runGait('walk')">▲<span>Forward</span></button>
-            <button class="dpad-btn d-left" onclick="runGait('left')">◀<span>Turn L</span></button>
-            <button class="dpad-btn d-stop" onclick="runGait('stand')">🛑<span>Stop</span></button>
-            <button class="dpad-btn d-right" onclick="runGait('right')">▶<span>Turn R</span></button>
-            <button class="dpad-btn d-down" onclick="runGait('backward')">▼<span>Back</span></button>
+            <button class="dpad-btn d-up" id="btn-dpad-up" onclick="runGait('walk')">▲<span>Forward</span></button>
+            <button class="dpad-btn d-left" id="btn-dpad-left" onclick="runGait('left')">◀<span>Turn L</span></button>
+            <button class="dpad-btn d-stop" id="btn-dpad-stop" onclick="runGait('stand')">🛑<span>Stop</span></button>
+            <button class="dpad-btn d-right" id="btn-dpad-right" onclick="runGait('right')">▶<span>Turn R</span></button>
+            <button class="dpad-btn d-down" id="btn-dpad-down" onclick="runGait('backward')">▼<span>Back</span></button>
           </div>
         </div>
 
         <!-- Action Cards Grid -->
         <div class="action-grid">
-          <!-- 🚀 START FORWARD WALKING (Dedicated Primary Button) -->
-          <div class="action-card act-start" onclick="runGait('walk')" style="grid-column: span 2; background: linear-gradient(135deg, rgba(16,185,129,0.32), rgba(6,182,212,0.25)); border: 2px solid var(--accent-emerald); box-shadow: 0 0 20px rgba(16,185,129,0.38);">
+          <!-- Dedicated Start Walking Button -->
+          <div class="action-card act-walk" onclick="runGait('walk')" style="grid-column: span 2; background: linear-gradient(135deg, rgba(16,185,129,0.32), rgba(6,182,212,0.25)); border: 2px solid var(--accent-emerald); box-shadow: 0 0 20px rgba(16,185,129,0.38);">
             <div class="action-title" style="color: #6ee7b7; font-size: 1.02rem; font-weight: 900;"><span>🚀 1. START DYNAMIC WALKING</span><span>▶</span></div>
-            <div class="action-desc" style="color: #a7f3d0; font-weight: 700;">Initiate smooth continuous forward biped locomotion with stance propulsion</div>
+            <div class="action-desc" style="color: #a7f3d0; font-weight: 700;">Initiate continuous alternating stride walking with zero knee judder</div>
           </div>
           <div class="action-card act-step" onclick="runGait('step')">
             <div class="action-title"><span>🐾 2. Single Stride Step</span><span>▶</span></div>
-            <div class="action-desc">One complete smooth forward stride returning to standing neutral</div>
+            <div class="action-desc">One complete forward stride returning to standing neutral</div>
           </div>
           <div class="action-card act-ref" onclick="runGait('ref_step')">
-            <div class="action-title"><span>📐 3. Ref takeStep(2,0)</span><span>▶</span></div>
+            <div class="action-title"><span>📐 3. Ref takeStep(1.6,20)</span><span>▶</span></div>
             <div class="action-desc">Discrete calibrated IK step sequence</div>
           </div>
           <div class="action-card act-march" onclick="runGait('march')" style="border-color: rgba(6,182,212,0.35); background: rgba(6,182,212,0.1);">
             <div class="action-title" style="color: #67e8f9;"><span>🎪 4. In-Place March</span><span>▶</span></div>
-            <div class="action-desc">High-knee dynamic alternating foot lift with zero forward translation</div>
+            <div class="action-desc">High-knee dynamic alternating foot lift with zero forward drift</div>
           </div>
           <div class="action-card act-crouch" onclick="runGait('crouch')" style="border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.1);">
             <div class="action-title" style="color: #fde68a;"><span>🏋️ 5. Crouch & Squat</span><span>▶</span></div>
-            <div class="action-desc">Symmetrical vertical squat showing coordinated knee & ankle flexion</div>
+            <div class="action-desc">Symmetrical vertical squat with knee flexion</div>
           </div>
           <div class="action-card act-test" onclick="runGait('test')">
             <div class="action-title"><span>🧪 6. Diagnostics Sweep</span><span>▶</span></div>
-            <div class="action-desc">Sequential gentle safety sweep of all 6 servos</div>
+            <div class="action-desc">Sequential safety sweep of all 6 servos</div>
           </div>
           <div class="action-card act-stop" onclick="runGait('stand')" style="background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.2)); border: 1px solid rgba(239,68,68,0.4); grid-column: span 2;">
-            <div class="action-title" style="color: #fca5a5;"><span>🛑 7. EMERGENCY STOP & PARK STAND</span><span>⏹</span></div>
+            <div class="action-title" style="color: #fca5a5;"><span>🛑 7. EMERGENCY STOP & HOLD STAND</span><span>⏹</span></div>
             <div class="action-desc">Locks both legs to calibrated standing neutral [94°, 8°, 94° | 94°, 94°, 94°]</div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Choreographed Stunt & Gesture Routines -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title"><span>🎭</span><span>CHOREOGRAPHED STUNTS & SPECIAL GESTURES</span></div>
+      </div>
+      <div class="stunt-grid">
+        <div class="stunt-card" onclick="playRoutine('bow')">
+          <div class="stunt-title"><span>🙇 1. Polite Robot Bow</span><span>▶</span></div>
+          <div class="stunt-desc">Graceful forward hip tilt gesture with smooth balance recovery</div>
+        </div>
+        <div class="stunt-card" onclick="playRoutine('kick')">
+          <div class="stunt-title"><span>🥋 2. Martial Arts Kick</span><span>▶</span></div>
+          <div class="stunt-desc">Weight shifts left, right leg lifts and snaps forward smoothly</div>
+        </div>
+        <div class="stunt-card" onclick="playRoutine('shimmy')">
+          <div class="stunt-title"><span>💃 3. Dynamic Dance Shimmy</span><span>▶</span></div>
+          <div class="stunt-desc">Rhythmic alternating hip-sway balance performance</div>
+        </div>
+        <div class="stunt-card" onclick="playRoutine('standup')">
+          <div class="stunt-title"><span>🧍 4. Smooth Stand-Up Settle</span><span>▶</span></div>
+          <div class="stunt-desc">Gradual leg extension from crouched posture into neutral</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Web Terminal & Command Console -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title"><span>💻</span><span>INTERACTIVE WEB TERMINAL & SYSTEM CLI</span></div>
+        <button class="tab-pill" onclick="clearTerminal()">Clear Log</button>
+      </div>
+      <div class="terminal-container">
+        <div class="term-chips">
+          <span style="font-size: 0.66rem; color: var(--text-muted); margin-right: 4px;">Quick Commands:</span>
+          <span class="term-chip" onclick="execTerm('walk')">walk</span>
+          <span class="term-chip" onclick="execTerm('step')">step</span>
+          <span class="term-chip" onclick="execTerm('march')">march</span>
+          <span class="term-chip" onclick="execTerm('crouch')">crouch</span>
+          <span class="term-chip" onclick="execTerm('stop')">stop</span>
+          <span class="term-chip" onclick="execTerm('diag')">diag</span>
+          <span class="term-chip" onclick="execTerm('status')">status</span>
+          <span class="term-chip" onclick="execTerm('help')">help</span>
+        </div>
+        <div class="terminal-output" id="term-output">
+          <div class="log-line"><span class="log-time">[BOOT]</span><span>Connected to ESP32 6-DOF Bipedal Robot Controller</span></div>
+          <div class="log-line"><span class="log-time">[SYS]</span><span>Real-Time FreeRTOS Locomotion Engine active on Core 1 @ 50Hz</span></div>
+        </div>
+        <form class="terminal-input-bar" onsubmit="event.preventDefault(); submitTermInput();">
+          <span class="term-prompt">&gt;</span>
+          <input type="text" class="term-input" id="term-input" placeholder="Type command (e.g. walk, step, stop, diag, status)..." autocomplete="off">
+          <button type="submit" class="term-btn">SEND</button>
+        </form>
       </div>
     </section>
 
@@ -784,24 +989,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       </div>
       <div class="tuner-grid">
         <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Cadence (Speed)</span><span class="tuner-val" id="val-freq">0.65 Hz</span></div>
-          <input type="range" class="slider-styled" id="slider-freq" min="3" max="14" value="6.5" step="0.5" oninput="setGaitParam('freq', this.value / 10.0)">
+          <div class="tuner-header"><span class="tuner-label">Cadence (Speed)</span><span class="tuner-val" id="val-freq">0.60 Hz</span></div>
+          <input type="range" class="slider-styled" id="slider-freq" min="3" max="14" value="6.0" step="0.5" oninput="setGaitParam('freq', this.value / 10.0)">
         </div>
         <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Stride Swing Amp</span><span class="tuner-val" id="val-stride">6.0°</span></div>
-          <input type="range" class="slider-styled" id="slider-stride" min="2.0" max="10.0" value="6.0" step="0.5" oninput="setGaitParam('stride', this.value)">
+          <div class="tuner-header"><span class="tuner-label">Stride Length</span><span class="tuner-val" id="val-stride">0.85 cm</span></div>
+          <input type="range" class="slider-styled" id="slider-stride" min="0.5" max="3.0" value="0.85" step="0.05" oninput="setGaitParam('stride', this.value)">
         </div>
         <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Knee Lift Clearance</span><span class="tuner-val" id="val-knee">7.0°</span></div>
-          <input type="range" class="slider-styled" id="slider-knee" min="3.0" max="12.0" value="7.0" step="0.5" oninput="setGaitParam('knee', this.value)">
+          <div class="tuner-header"><span class="tuner-label">Swing Clearance</span><span class="tuner-val" id="val-knee">0.40 cm</span></div>
+          <input type="range" class="slider-styled" id="slider-knee" min="0.2" max="1.5" value="0.40" step="0.05" oninput="setGaitParam('knee', this.value)">
         </div>
         <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Stance Ground Push</span><span class="tuner-val" id="val-push">2.0°</span></div>
-          <input type="range" class="slider-styled" id="slider-push" min="1.0" max="5.0" value="2.0" step="0.5" oninput="setGaitParam('push', this.value)">
-        </div>
-        <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Foot Level Flexion</span><span class="tuner-val" id="val-flex">2.2°</span></div>
-          <input type="range" class="slider-styled" id="slider-flex" min="0.5" max="5.0" value="2.2" step="0.2" oninput="setGaitParam('foot', this.value)">
+          <div class="tuner-header"><span class="tuner-label">Stance Height</span><span class="tuner-val" id="val-height">10.0 cm</span></div>
+          <input type="range" class="slider-styled" id="slider-height" min="8.5" max="10.7" value="10.0" step="0.1" oninput="setGaitParam('height', this.value)">
         </div>
       </div>
     </section>
@@ -814,7 +1015,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       <div class="sys-actions">
         <button class="btn-sys btn-save" onclick="saveOffsets()"><span>💾</span><span>Save Offsets To EEPROM</span></button>
         <button class="btn-sys btn-restore" onclick="resetOffsets()"><span>🔄</span><span>Restore Factory Baselines</span></button>
-        <button class="btn-sys btn-scan" onclick="scanI2C()"><span>🔍</span><span>Scan I2C Bus Devices</span></button>
+        <button class="btn-sys btn-export" onclick="exportProfile()"><span>📤</span><span>Export JSON Profile</span></button>
+        <button class="btn-sys btn-scan" onclick="scanI2C()"><span>🔍</span><span>Scan I2C Bus</span></button>
       </div>
     </section>
   </div>
@@ -827,6 +1029,14 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     let selectedJointChannel = 0;
     let selectedJointName = 'Right Hip';
     const DEFAULT_ANGLES = { 0: 94, 1: 8, 12: 94, 4: 94, 8: 94, 15: 94 };
+
+    // Scope variables
+    let scopeRunning = true;
+    let scopeHistory = [];
+    const MAX_SCOPE_POINTS = 120;
+
+    // Ping tracking
+    let lastPingTime = 0;
 
     function showToast(msg, duration = 2500) {
       const t = document.getElementById('toast');
@@ -946,18 +1156,21 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     function runGait(gait) {
       const msgs = {
-        'start': '🟢 Robot Initialized in Standard Stand [94°, 8°, 94° | 94°, 94°, 94°]',
+        'start': '🟢 Robot Initialized in Standard Stand',
         'walk': '🚀 Continuous Dynamic Walk Started',
         'step': '🐾 Single Full Stride Executing',
         'stand': '🛑 Robot Parked at Constant Neutral',
-        'ref_step': '📐 Reference takeStep(2, 0) Executing',
+        'ref_step': '📐 Reference takeStep(1.6, 20) Executing',
         'ref_init': '⚙️ Reference initialize() Executing',
         'test': '🧪 Running Joint Diagnostics Sweep',
         'left': '◀ Turning Left',
         'right': '▶ Turning Right',
-        'backward': '▼ Walking Backward'
+        'backward': '▼ Walking Backward',
+        'march': '🎪 In-Place Marching Active',
+        'crouch': '🏋️ Crouch & Squat Active'
       };
       sendCmd('/run_gait?gait=' + gait, msgs[gait] || ('Gait: ' + gait));
+      addTermLog('[CMD] Executed gait: ' + gait);
     }
 
     function setGaitParam(param, val) {
@@ -967,27 +1180,49 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         if (el) el.innerText = val.toFixed(2) + ' Hz';
       } else if (param === 'stride') {
         const el = document.getElementById('val-stride');
-        if (el) el.innerText = val.toFixed(1) + '°';
+        if (el) el.innerText = val.toFixed(2) + ' cm';
       } else if (param === 'knee') {
         const el = document.getElementById('val-knee');
-        if (el) el.innerText = val.toFixed(1) + '°';
-      } else if (param === 'push') {
-        const el = document.getElementById('val-push');
-        if (el) el.innerText = val.toFixed(1) + '°';
-      } else if (param === 'foot') {
-        const el = document.getElementById('val-flex');
-        if (el) el.innerText = val.toFixed(1) + '°';
+        if (el) el.innerText = val.toFixed(2) + ' cm';
+      } else if (param === 'height') {
+        const el = document.getElementById('val-height');
+        if (el) el.innerText = val.toFixed(1) + ' cm';
       }
       sendCmd('/set_gait_param?param=' + param + '&val=' + val);
     }
 
     function saveOffsets() {
       sendCmd('/save_offsets', '💾 All 6 Joint Angles Saved Permanently to Flash!');
+      addTermLog('[NVS] Saved active joint positions as permanent home baselines');
     }
 
     function resetOffsets() {
       sendCmd('/reset_offsets', '🔄 Restored Factory Baselines: Right [94°, 8°, 94°] | Left [94°, 94°, 94°]');
+      addTermLog('[NVS] Factory defaults restored');
       setTimeout(pollTelemetry, 300);
+    }
+
+    function exportProfile() {
+      const profile = {
+        name: "ESP32 Biped Robot Calibration",
+        timestamp: new Date().toISOString(),
+        angles: {
+          ch0_r_hip: parseInt(document.getElementById('slider-0')?.value || 94),
+          ch1_r_knee: parseInt(document.getElementById('slider-1')?.value || 8),
+          ch12_r_foot: parseInt(document.getElementById('slider-12')?.value || 94),
+          ch4_l_hip: parseInt(document.getElementById('slider-4')?.value || 94),
+          ch8_l_knee: parseInt(document.getElementById('slider-8')?.value || 94),
+          ch15_l_foot: parseInt(document.getElementById('slider-15')?.value || 94)
+        }
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profile, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "biped_calibration_profile.json");
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      showToast('📤 Calibration Profile Exported!');
     }
 
     function scanI2C() {
@@ -996,21 +1231,269 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .then(d => {
           if (d.devices && d.devices.length > 0) {
             showToast('✓ I2C Bus Devices Found: ' + d.devices.join(', '));
+            addTermLog('[I2C] Found responsive devices: ' + d.devices.join(', '));
           } else {
             showToast('⚠️ No I2C Devices Found on SDA 21 / SCL 22');
+            addTermLog('[I2C] No devices detected');
           }
         }).catch(() => { showToast('I2C Scan Completed'); });
     }
 
+    // =========================================================================
+    // Choreographed Stunts & Animated Gestures
+    // =========================================================================
+    function playRoutine(name) {
+      if (name === 'bow') {
+        showToast('🙇 Executing Robot Bow...');
+        addTermLog('[ROUTINE] Robot Bow executing');
+        // Tilt hips forward
+        setAngle(0, 102); setAngle(4, 86);
+        setTimeout(() => {
+          // Return to stand
+          setAngle(0, 94); setAngle(4, 94);
+          showToast('✓ Bow Complete');
+        }, 1400);
+      } else if (name === 'kick') {
+        showToast('🥋 Executing Martial Arts Kick...');
+        addTermLog('[ROUTINE] Martial Arts Kick executing');
+        // Lift right knee and extend hip
+        setAngle(0, 98); setAngle(1, 15);
+        setTimeout(() => {
+          setAngle(0, 94); setAngle(1, 8);
+          showToast('✓ Kick Complete');
+        }, 1200);
+      } else if (name === 'shimmy') {
+        showToast('💃 Executing Dance Shimmy...');
+        addTermLog('[ROUTINE] Dance Shimmy executing');
+        let count = 0;
+        let intv = setInterval(() => {
+          if (count % 2 === 0) {
+            setAngle(0, 98); setAngle(4, 98);
+          } else {
+            setAngle(0, 90); setAngle(4, 90);
+          }
+          count++;
+          if (count > 6) {
+            clearInterval(intv);
+            setAngle(0, 94); setAngle(4, 94);
+            showToast('✓ Shimmy Complete');
+          }
+        }, 350);
+      } else if (name === 'standup') {
+        showToast('🧍 Initializing Stand-Up...');
+        runGait('init');
+      }
+    }
+
+    // =========================================================================
+    // Real-Time Oscilloscope Visualizer
+    // =========================================================================
+    const scopeCanvas = document.getElementById('scope-canvas');
+    const ctx = scopeCanvas ? scopeCanvas.getContext('2d') : null;
+
+    function resizeScope() {
+      if (!scopeCanvas) return;
+      scopeCanvas.width = scopeCanvas.parentElement.clientWidth;
+      scopeCanvas.height = scopeCanvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeScope);
+    setTimeout(resizeScope, 100);
+
+    function toggleScope() {
+      scopeRunning = !scopeRunning;
+      const btn = document.getElementById('btn-scope-pause');
+      if (btn) btn.innerText = scopeRunning ? 'Pause' : 'Resume';
+    }
+
+    function clearScope() {
+      scopeHistory = [];
+      drawScope();
+    }
+
+    function pushScopePoint(rh, lh, rk, lk) {
+      if (!scopeRunning) return;
+      scopeHistory.push({ rh, lh, rk, lk });
+      if (scopeHistory.length > MAX_SCOPE_POINTS) {
+        scopeHistory.shift();
+      }
+      drawScope();
+    }
+
+    function drawScope() {
+      if (!ctx || !scopeCanvas) return;
+      const w = scopeCanvas.width;
+      const h = scopeCanvas.height;
+
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (let y = 30; y < h; y += 35) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      if (scopeHistory.length < 2) return;
+
+      const step = w / (MAX_SCOPE_POINTS - 1);
+
+      // Draw helper for each channel: (val, color, minAngle, maxAngle)
+      function plotSeries(key, color, minA, maxA) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < scopeHistory.length; i++) {
+          const val = scopeHistory[i][key];
+          const norm = (val - minA) / (maxA - minA);
+          const py = h - 15 - Math.max(0, Math.min(1, norm)) * (h - 30);
+          const px = i * step;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      plotSeries('rh', '#f59e0b', 80, 110);
+      plotSeries('lh', '#06b6d4', 80, 110);
+      plotSeries('rk', '#eab308', 5, 20);
+      plotSeries('lk', '#3b82f6', 80, 100);
+    }
+
+    // =========================================================================
+    // Interactive Web Terminal CLI
+    // =========================================================================
+    function addTermLog(text) {
+      const out = document.getElementById('term-output');
+      if (!out) return;
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      const timeStr = new Date().toTimeString().split(' ')[0];
+      line.innerHTML = '<span class="log-time">[' + timeStr + ']</span><span>' + text + '</span>';
+      out.appendChild(line);
+      out.scrollTop = out.scrollHeight;
+    }
+
+    function clearTerminal() {
+      const out = document.getElementById('term-output');
+      if (out) out.innerHTML = '';
+      addTermLog('[SYS] Terminal buffer cleared');
+    }
+
+    function execTerm(cmd) {
+      addTermLog('&gt; ' + cmd);
+      fetch('/cmd?c=' + encodeURIComponent(cmd))
+        .then(r => r.json())
+        .then(d => {
+          if (d.output) addTermLog(d.output);
+        })
+        .catch(() => {
+          addTermLog('[ERR] Failed to execute command');
+        });
+    }
+
+    function submitTermInput() {
+      const input = document.getElementById('term-input');
+      if (!input || !input.value.trim()) return;
+      execTerm(input.value.trim());
+      input.value = '';
+    }
+
+    // =========================================================================
+    // Keyboard WASD Hotkeys & Gamepad Integration
+    // =========================================================================
+    const activeKeys = {};
+    window.addEventListener('keydown', (e) => {
+      // Don't intercept when user is typing in terminal
+      if (document.activeElement && document.activeElement.id === 'term-input') return;
+
+      const key = e.key.toLowerCase();
+      if (activeKeys[key]) return; // debounce
+      activeKeys[key] = true;
+
+      if (key === 'w' || e.key === 'ArrowUp') {
+        highlightKey('key-w', true); runGait('walk');
+      } else if (key === 's' || e.key === 'ArrowDown') {
+        highlightKey('key-s', true); runGait('backward');
+      } else if (key === 'a' || e.key === 'ArrowLeft') {
+        highlightKey('key-a', true); runGait('left');
+      } else if (key === 'd' || e.key === 'ArrowRight') {
+        highlightKey('key-d', true); runGait('right');
+      } else if (key === ' ') {
+        e.preventDefault();
+        highlightKey('key-space', true); runGait('stand');
+      } else if (key === 'm') {
+        runGait('march');
+      } else if (key === 'c') {
+        runGait('crouch');
+      } else if (key === 't') {
+        runGait('test');
+      } else if (key >= '1' && key <= '6') {
+        const chMap = ['0', '1', '12', '4', '8', '15'];
+        const names = ['Right Hip', 'Right Knee', 'Right Foot', 'Left Hip', 'Left Knee', 'Left Foot'];
+        const idx = parseInt(key) - 1;
+        selectJoint(parseInt(chMap[idx]), names[idx]);
+      } else if (key === 'q') {
+        stepSelected(-1);
+      } else if (key === 'e') {
+        stepSelected(+1);
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      activeKeys[key] = false;
+      if (key === 'w' || e.key === 'ArrowUp') highlightKey('key-w', false);
+      if (key === 's' || e.key === 'ArrowDown') highlightKey('key-s', false);
+      if (key === 'a' || e.key === 'ArrowLeft') highlightKey('key-a', false);
+      if (key === 'd' || e.key === 'ArrowRight') highlightKey('key-d', false);
+      if (key === ' ') highlightKey('key-space', false);
+    });
+
+    function highlightKey(id, pressed) {
+      const el = document.getElementById(id);
+      if (el) {
+        if (pressed) el.classList.add('pressed');
+        else el.classList.remove('pressed');
+      }
+    }
+
+    // HTML5 Gamepad API Poll
+    window.addEventListener("gamepadconnected", (e) => {
+      const gp = document.getElementById('stat-gamepad');
+      if (gp) { gp.innerText = 'CONNECTED (' + e.gamepad.id.substring(0, 12) + ')'; gp.style.color = '#10b981'; }
+      showToast('🎮 Gamepad Connected: ' + e.gamepad.id);
+    });
+
+    window.addEventListener("gamepaddisconnected", () => {
+      const gp = document.getElementById('stat-gamepad');
+      if (gp) { gp.innerText = 'DISCONNECTED'; gp.style.color = 'var(--text-muted)'; }
+    });
+
+    // =========================================================================
+    // Real-Time Telemetry Polling (350ms interval)
+    // =========================================================================
     function pollTelemetry() {
+      const t0 = performance.now();
       fetch('/get_angles')
         .then(r => r.json())
         .then(d => {
+          const rtt = Math.round(performance.now() - t0);
+          const elPing = document.getElementById('hud-ping');
+          if (elPing) elPing.innerText = rtt;
+
           if (d.angles) {
             for (const ch in d.angles) {
               const val = d.angles[ch];
               updateUI(ch, val);
             }
+            // Stream to real-time oscilloscope
+            pushScopePoint(
+              d.angles['0'] || 94,
+              d.angles['4'] || 94,
+              d.angles['1'] || 8,
+              d.angles['8'] || 94
+            );
           }
           if (d.active_gait) {
             const ag = document.getElementById('svg-active-gait');
@@ -1049,6 +1532,30 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           if (d.contact) {
             const elC = document.getElementById('hud-contact-state');
             if (elC) elC.innerText = d.contact;
+          }
+          if (d.heap !== undefined) {
+            const elH = document.getElementById('stat-heap');
+            if (elH) elH.innerText = Math.round(d.heap / 1024) + ' KB';
+          }
+          if (d.uptime !== undefined) {
+            const elU = document.getElementById('stat-uptime');
+            if (elU) {
+              const sec = d.uptime;
+              const hrs = Math.floor(sec / 3600);
+              const mins = Math.floor((sec % 3600) / 60);
+              const secs = sec % 60;
+              elU.innerText = (hrs < 10 ? '0' : '') + hrs + ':' +
+                              (mins < 10 ? '0' : '') + mins + ':' +
+                              (secs < 10 ? '0' : '') + secs;
+            }
+          }
+          if (d.rssi !== undefined) {
+            const elR = document.getElementById('stat-rssi');
+            if (elR) elR.innerText = (d.rssi === 0 ? 'SoftAP' : (d.rssi + ' dBm'));
+          }
+          if (d.ip) {
+            const elIp = document.getElementById('stat-ip');
+            if (elIp) elIp.innerText = d.ip;
           }
         }).catch(()=>{});
     }
