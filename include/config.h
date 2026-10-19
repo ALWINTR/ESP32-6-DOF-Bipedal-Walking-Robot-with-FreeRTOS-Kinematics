@@ -116,9 +116,9 @@ const JointConfig DEFAULT_JOINTS[NUM_JOINTS] = {
 #define LINK_SHIN_L2_CM            5.70f  // Shin link length
 #define MAX_LEG_EXTENSION_CM       (LINK_THIGH_L1_CM + LINK_SHIN_L2_CM) // 10.70cm
 
-// Default Walking Parameters
-#define DEFAULT_WALK_FREQ_HZ       0.60f  // Stride frequency (cadence)
-#define DEFAULT_STEP_LENGTH_CM     0.85f  // Stable forward stride length
+// Default Walking Parameters for Maximum Stability
+#define DEFAULT_WALK_FREQ_HZ       0.55f  // Stable, judder-free cadence frequency
+#define DEFAULT_STEP_LENGTH_CM     0.80f  // Stable Cartesian stride (keeps CoM within support polygon)
 #define DEFAULT_STEP_CLEARANCE_CM  0.40f  // Ground clearance lift during swing
 #define DEFAULT_STEP_HEIGHT_CM     10.00f // Standing stance height (Z nominal)
 

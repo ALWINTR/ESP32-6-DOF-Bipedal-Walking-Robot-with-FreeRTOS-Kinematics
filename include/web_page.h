@@ -226,13 +226,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       background: #030712; border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--radius-sm); overflow: hidden; display: flex; flex-direction: column;
     }
-    .terminal-header {
-      background: rgba(255,255,255,0.04); padding: 7px 12px; display: flex;
-      justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .terminal-title { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); font-family: ui-monospace, monospace; }
     .terminal-output {
-      height: 140px; overflow-y: auto; padding: 10px; font-family: ui-monospace, monospace;
+      height: 130px; overflow-y: auto; padding: 10px; font-family: ui-monospace, monospace;
       font-size: 0.75rem; color: #38bdf8; line-height: 1.45; display: flex; flex-direction: column; gap: 3px;
     }
     .log-line { display: flex; gap: 8px; word-break: break-all; }
@@ -268,13 +263,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
     .stunt-title { font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; justify-content: space-between; color: #c4b5fd; }
     .stunt-desc { font-size: 0.66rem; color: var(--text-muted); }
-
-    /* Keyframe Timeline Bar */
-    .timeline-bar {
-      display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3);
-      padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-card);
-      flex-wrap: wrap;
-    }
 
     /* Keyboard Hotkeys HUD */
     .keys-hud { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -469,22 +457,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       </div>
     </section>
 
-    <!-- Interactive Schematic Card -->
+    <!-- Interactive Robot Movement Schematic Card -->
     <section class="card">
       <div class="card-header">
         <div class="card-title">
           <span>📐</span>
-          <span>INTERACTIVE ROBOT RIG & SCHEMATIC</span>
+          <span>LIVE ANIMATED ROBOT MOVEMENT & KINEMATICS</span>
         </div>
         <div class="tab-pills">
-          <button class="tab-pill active" id="tab-btn-kinematic" onclick="switchSchematic('kinematic')">Kinematic Rig</button>
+          <button class="tab-pill active" id="tab-btn-kinematic" onclick="switchSchematic('kinematic')">Front View</button>
+          <button class="tab-pill" id="tab-btn-side" onclick="switchSchematic('side')">Side Walk View</button>
           <button class="tab-pill" id="tab-btn-circuit" onclick="switchSchematic('circuit')">Circuit Pinout</button>
         </div>
       </div>
 
       <!-- Schematic Container -->
       <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <!-- Kinematic Anatomy SVG -->
+        
+        <!-- 1. FRONT ANIMATED KINEMATIC RIG -->
         <svg id="svg-kinematic" class="schematic-svg" viewBox="0 0 540 370">
           <defs>
             <linearGradient id="grad-r-link" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -523,13 +513,13 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <line id="link-thigh-r" x1="140" y1="100" x2="140" y2="200" stroke="url(#grad-r-link)" stroke-width="6" stroke-linecap="round" />
           <line id="link-shin-r" x1="140" y1="200" x2="140" y2="300" stroke="url(#grad-r-link)" stroke-width="6" stroke-linecap="round" />
           <rect id="plate-foot-r" x="105" y="318" width="70" height="14" rx="4" fill="#f59e0b" opacity="0.85" />
-          <text x="140" y="329" text-anchor="middle" fill="#000" font-size="8" font-weight="900">R.FOOT SOLE</text>
+          <text id="plate-text-r" x="140" y="329" text-anchor="middle" fill="#000" font-size="8" font-weight="900">R.FOOT SOLE</text>
 
           <!-- Left Leg Links -->
           <line id="link-thigh-l" x1="400" y1="100" x2="400" y2="200" stroke="url(#grad-l-link)" stroke-width="6" stroke-linecap="round" />
           <line id="link-shin-l" x1="400" y1="200" x2="400" y2="300" stroke="url(#grad-l-link)" stroke-width="6" stroke-linecap="round" />
           <rect id="plate-foot-l" x="365" y="318" width="70" height="14" rx="4" fill="#06b6d4" opacity="0.85" />
-          <text x="400" y="329" text-anchor="middle" fill="#000" font-size="8" font-weight="900">L.FOOT SOLE</text>
+          <text id="plate-text-l" x="400" y="329" text-anchor="middle" fill="#000" font-size="8" font-weight="900">L.FOOT SOLE</text>
 
           <!-- Joint Nodes (Right Leg) -->
           <g class="joint-node selected" id="node-0" onclick="selectJoint(0, 'Right Hip')">
@@ -577,7 +567,47 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <text id="svg-active-gait" x="270" y="195" text-anchor="middle" fill="#10b981" font-size="14" font-weight="900">STAND</text>
         </svg>
 
-        <!-- Circuit Schematic SVG (Hidden by default) -->
+        <!-- 2. SIDE SAGITTAL WALKING RIG (Interactive 2D Biped Walking Visualizer) -->
+        <svg id="svg-side" class="schematic-svg" viewBox="0 0 540 370" style="display: none;">
+          <!-- Ground Surface -->
+          <line x1="20" y1="330" x2="520" y2="330" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6" />
+          <rect x="20" y="332" width="500" height="24" fill="rgba(15,23,42,0.6)" />
+          <text x="270" y="348" text-anchor="middle" fill="#64748b" font-size="9" font-weight="700">SAGITTAL SURFACE CONTACT PLANE (GROUND CONTACT: 10.0cm)</text>
+
+          <!-- Torso & Pelvis -->
+          <rect x="245" y="20" width="50" height="60" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2" />
+          <rect x="255" y="5" width="30" height="18" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+          <line x1="260" y1="14" x2="280" y2="14" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" />
+          <circle cx="270" cy="50" r="10" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3" />
+          <text x="270" y="53" text-anchor="middle" fill="#38bdf8" font-size="8" font-weight="900">CORE</text>
+
+          <!-- Hip Axis Origin -->
+          <circle cx="270" cy="80" r="10" fill="#0f172a" stroke="#fff" stroke-width="2.5" />
+          <text x="270" y="83" text-anchor="middle" fill="#fff" font-size="8" font-weight="900">HIP</text>
+
+          <!-- Left Leg (Cyan Background Layer) -->
+          <line id="side-thigh-l" x1="270" y1="80" x2="270" y2="190" stroke="#06b6d4" stroke-width="7" stroke-linecap="round" />
+          <circle id="side-knee-l" cx="270" cy="190" r="9" fill="#0f172a" stroke="#06b6d4" stroke-width="2.5" />
+          <line id="side-shin-l" x1="270" y1="190" x2="270" y2="310" stroke="#06b6d4" stroke-width="7" stroke-linecap="round" />
+          <circle id="side-ankle-l" cx="270" cy="310" r="7" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
+          <rect id="side-foot-l" x="238" y="316" width="64" height="14" rx="4" fill="#06b6d4" opacity="0.9" />
+          <text id="side-foot-text-l" x="270" y="327" text-anchor="middle" fill="#000" font-size="8" font-weight="900">L.FOOT (CH15)</text>
+
+          <!-- Right Leg (Amber Foreground Layer) -->
+          <line id="side-thigh-r" x1="270" y1="80" x2="270" y2="190" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" />
+          <circle id="side-knee-r" cx="270" cy="190" r="9" fill="#0f172a" stroke="#f59e0b" stroke-width="2.5" />
+          <line id="side-shin-r" x1="270" y1="190" x2="270" y2="310" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" />
+          <circle id="side-ankle-r" cx="270" cy="310" r="7" fill="#0f172a" stroke="#f59e0b" stroke-width="2" />
+          <rect id="side-foot-r" x="238" y="316" width="64" height="14" rx="4" fill="#f59e0b" opacity="0.95" />
+          <text id="side-foot-text-r" x="270" y="327" text-anchor="middle" fill="#000" font-size="8" font-weight="900">R.FOOT (CH12)</text>
+
+          <!-- Gait Status Badge in Side View -->
+          <rect x="390" y="20" width="125" height="55" rx="6" fill="rgba(15,23,42,0.85)" stroke="rgba(255,255,255,0.12)" />
+          <text x="452" y="38" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="800">WALKING GAIT</text>
+          <text id="side-gait-status" x="452" y="58" text-anchor="middle" fill="#10b981" font-size="13" font-weight="900">STAND</text>
+        </svg>
+
+        <!-- 3. CIRCUIT PINOUT SCHEMATIC SVG -->
         <svg id="svg-circuit" class="schematic-svg" viewBox="0 0 540 370" style="display: none;">
           <rect x="30" y="40" width="140" height="290" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2" />
           <text x="100" y="65" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="900">ESP32 DevKit</text>
@@ -659,7 +689,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <!-- Dedicated Start Walking Button -->
           <div class="action-card act-walk" onclick="runGait('walk')" style="grid-column: span 2; background: linear-gradient(135deg, rgba(16,185,129,0.32), rgba(6,182,212,0.25)); border: 2px solid var(--accent-emerald); box-shadow: 0 0 20px rgba(16,185,129,0.38);">
             <div class="action-title" style="color: #6ee7b7; font-size: 1.02rem; font-weight: 900;"><span>🚀 1. START DYNAMIC WALKING</span><span>▶</span></div>
-            <div class="action-desc" style="color: #a7f3d0; font-weight: 700;">Initiate continuous alternating stride walking with zero knee judder</div>
+            <div class="action-desc" style="color: #a7f3d0; font-weight: 700;">Initiate continuous alternating stride walking with smooth ground clearance</div>
           </div>
           <div class="action-card act-step" onclick="runGait('step')">
             <div class="action-title"><span>🐾 2. Single Stride Step</span><span>▶</span></div>
@@ -989,12 +1019,12 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       </div>
       <div class="tuner-grid">
         <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Cadence (Speed)</span><span class="tuner-val" id="val-freq">0.60 Hz</span></div>
-          <input type="range" class="slider-styled" id="slider-freq" min="3" max="14" value="6.0" step="0.5" oninput="setGaitParam('freq', this.value / 10.0)">
+          <div class="tuner-header"><span class="tuner-label">Cadence (Speed)</span><span class="tuner-val" id="val-freq">0.55 Hz</span></div>
+          <input type="range" class="slider-styled" id="slider-freq" min="3" max="14" value="5.5" step="0.5" oninput="setGaitParam('freq', this.value / 10.0)">
         </div>
         <div class="tuner-card">
-          <div class="tuner-header"><span class="tuner-label">Stride Length</span><span class="tuner-val" id="val-stride">0.85 cm</span></div>
-          <input type="range" class="slider-styled" id="slider-stride" min="0.5" max="3.0" value="0.85" step="0.05" oninput="setGaitParam('stride', this.value)">
+          <div class="tuner-header"><span class="tuner-label">Stride Length</span><span class="tuner-val" id="val-stride">0.80 cm</span></div>
+          <input type="range" class="slider-styled" id="slider-stride" min="0.4" max="2.5" value="0.80" step="0.05" oninput="setGaitParam('stride', this.value)">
         </div>
         <div class="tuner-card">
           <div class="tuner-header"><span class="tuner-label">Swing Clearance</span><span class="tuner-val" id="val-knee">0.40 cm</span></div>
@@ -1029,14 +1059,12 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     let selectedJointChannel = 0;
     let selectedJointName = 'Right Hip';
     const DEFAULT_ANGLES = { 0: 94, 1: 8, 12: 94, 4: 94, 8: 94, 15: 94 };
+    let liveAngles = { ...DEFAULT_ANGLES };
 
     // Scope variables
     let scopeRunning = true;
     let scopeHistory = [];
     const MAX_SCOPE_POINTS = 120;
-
-    // Ping tracking
-    let lastPingTime = 0;
 
     function showToast(msg, duration = 2500) {
       const t = document.getElementById('toast');
@@ -1062,16 +1090,19 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     function switchSchematic(tab) {
       const kSvg = document.getElementById('svg-kinematic');
+      const sSvg = document.getElementById('svg-side');
       const cSvg = document.getElementById('svg-circuit');
       const kBtn = document.getElementById('tab-btn-kinematic');
+      const sBtn = document.getElementById('tab-btn-side');
       const cBtn = document.getElementById('tab-btn-circuit');
-      if (tab === 'kinematic') {
-        kSvg.style.display = 'block'; cSvg.style.display = 'none';
-        kBtn.classList.add('active'); cBtn.classList.remove('active');
-      } else {
-        kSvg.style.display = 'none'; cSvg.style.display = 'block';
-        cBtn.classList.add('active'); kBtn.classList.remove('active');
-      }
+
+      if (kSvg) kSvg.style.display = (tab === 'kinematic') ? 'block' : 'none';
+      if (sSvg) sSvg.style.display = (tab === 'side') ? 'block' : 'none';
+      if (cSvg) cSvg.style.display = (tab === 'circuit') ? 'block' : 'none';
+
+      if (kBtn) kBtn.classList.toggle('active', tab === 'kinematic');
+      if (sBtn) sBtn.classList.toggle('active', tab === 'side');
+      if (cBtn) cBtn.classList.toggle('active', tab === 'circuit');
     }
 
     function selectJoint(ch, name) {
@@ -1115,7 +1146,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     function setAngle(ch, val) {
       val = parseInt(val);
+      liveAngles[ch] = val;
       updateUI(ch, val);
+      animateRig(liveAngles);
       if (ch === selectedJointChannel) {
         document.getElementById('selected-joint-angle').innerText = val + '°';
       }
@@ -1240,23 +1273,121 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     // =========================================================================
+    // 2D Robot Movement Kinematics Engine (Live Movement Visualizer)
+    // =========================================================================
+    function setLine(id, x1, y1, x2, y2) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.setAttribute('x1', x1); el.setAttribute('y1', y1);
+        el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+      }
+    }
+    function setCircle(id, cx, cy) {
+      const el = document.getElementById(id);
+      if (el) { el.setAttribute('cx', cx); el.setAttribute('cy', cy); }
+    }
+    function setRect(id, x, y) {
+      const el = document.getElementById(id);
+      if (el) { el.setAttribute('x', x); el.setAttribute('y', y); }
+    }
+
+    function animateRig(angles) {
+      const rHipA  = angles['0']  !== undefined ? angles['0']  : 94;
+      const rKneeA = angles['1']  !== undefined ? angles['1']  : 8;
+      const lHipA  = angles['4']  !== undefined ? angles['4']  : 94;
+      const lKneeA = angles['8']  !== undefined ? angles['8']  : 94;
+
+      // 1. FRONT VIEW KINEMATIC RIG
+      // Right Leg Front View
+      const dHipR = (rHipA - 94.0) * (Math.PI / 180);
+      const dKneeR = (rKneeA - 8.0) * (Math.PI / 180);
+      const rKneeX = 140 + 95 * Math.sin(dHipR * 0.45);
+      const rKneeY = 100 + 95 * Math.cos(dHipR * 0.45);
+      const rAnkleX = rKneeX + 105 * Math.sin((dHipR - dKneeR) * 0.45);
+      const rAnkleY = rKneeY + 105 * Math.cos((dHipR - dKneeR) * 0.45);
+
+      setLine('link-thigh-r', 140, 100, rKneeX, rKneeY);
+      setLine('link-shin-r', rKneeX, rKneeY, rAnkleX, rAnkleY);
+      const node1 = document.getElementById('node-1');
+      if (node1) node1.setAttribute('transform', `translate(${rKneeX - 140}, ${rKneeY - 200})`);
+      const node12 = document.getElementById('node-12');
+      if (node12) node12.setAttribute('transform', `translate(${rAnkleX - 140}, ${rAnkleY - 300})`);
+      const footPlateR = document.getElementById('plate-foot-r');
+      if (footPlateR) { footPlateR.setAttribute('x', rAnkleX - 35); footPlateR.setAttribute('y', rAnkleY + 14); }
+      const footTextR = document.getElementById('plate-text-r');
+      if (footTextR) { footTextR.setAttribute('x', rAnkleX); footTextR.setAttribute('y', rAnkleY + 25); }
+
+      // Left Leg Front View
+      const dHipL = -(lHipA - 94.0) * (Math.PI / 180);
+      const dKneeL = (94.0 - lKneeA) * (Math.PI / 180);
+      const lKneeX = 400 + 95 * Math.sin(dHipL * 0.45);
+      const lKneeY = 100 + 95 * Math.cos(dHipL * 0.45);
+      const lAnkleX = lKneeX + 105 * Math.sin((dHipL - dKneeL) * 0.45);
+      const lAnkleY = lKneeY + 105 * Math.cos((dHipL - dKneeL) * 0.45);
+
+      setLine('link-thigh-l', 400, 100, lKneeX, lKneeY);
+      setLine('link-shin-l', lKneeX, lKneeY, lAnkleX, lAnkleY);
+      const node8 = document.getElementById('node-8');
+      if (node8) node8.setAttribute('transform', `translate(${lKneeX - 400}, ${lKneeY - 200})`);
+      const node15 = document.getElementById('node-15');
+      if (node15) node15.setAttribute('transform', `translate(${lAnkleX - 400}, ${lAnkleY - 300})`);
+      const footPlateL = document.getElementById('plate-foot-l');
+      if (footPlateL) { footPlateL.setAttribute('x', lAnkleX - 35); footPlateL.setAttribute('y', lAnkleY + 14); }
+      const footTextL = document.getElementById('plate-text-l');
+      if (footTextL) { footTextL.setAttribute('x', lAnkleX); footTextL.setAttribute('y', lAnkleY + 25); }
+
+      // 2. SIDE SAGITTAL WALKING RIG (Walking Profile with Stride & Knee Lift)
+      const hipX = 270, hipY = 80;
+      const L1 = 110, L2 = 120; // visual link lengths
+
+      // Right Leg Side Profile:
+      const radHipR = -(rHipA - 94.0) * (Math.PI / 180) * 1.8;
+      const radKneeR = (rKneeA - 8.0) * (Math.PI / 180) * 2.2;
+      const skR_x = hipX + L1 * Math.sin(radHipR);
+      const skR_y = hipY + L1 * Math.cos(radHipR);
+      const saR_x = skR_x + L2 * Math.sin(radHipR - radKneeR);
+      const saR_y = skR_y + L2 * Math.cos(radHipR - radKneeR);
+
+      setLine('side-thigh-r', hipX, hipY, skR_x, skR_y);
+      setCircle('side-knee-r', skR_x, skR_y);
+      setLine('side-shin-r', skR_x, skR_y, saR_x, saR_y);
+      setCircle('side-ankle-r', saR_x, saR_y);
+      setRect('side-foot-r', saR_x - 32, saR_y + 4);
+      const txtFootR = document.getElementById('side-foot-text-r');
+      if (txtFootR) { txtFootR.setAttribute('x', saR_x); txtFootR.setAttribute('y', saR_y + 15); }
+
+      // Left Leg Side Profile:
+      const radHipL = (lHipA - 94.0) * (Math.PI / 180) * 1.8;
+      const radKneeL = (94.0 - lKneeA) * (Math.PI / 180) * 2.2;
+      const skL_x = hipX + L1 * Math.sin(radHipL);
+      const skL_y = hipY + L1 * Math.cos(radHipL);
+      const saL_x = skL_x + L2 * Math.sin(radHipL - radKneeL);
+      const saL_y = skL_y + L2 * Math.cos(radHipL - radKneeL);
+
+      setLine('side-thigh-l', hipX, hipY, skL_x, skL_y);
+      setCircle('side-knee-l', skL_x, skL_y);
+      setLine('side-shin-l', skL_x, skL_y, saL_x, saL_y);
+      setCircle('side-ankle-l', saL_x, saL_y);
+      setRect('side-foot-l', saL_x - 32, saL_y + 4);
+      const txtFootL = document.getElementById('side-foot-text-l');
+      if (txtFootL) { txtFootL.setAttribute('x', saL_x); txtFootL.setAttribute('y', saL_y + 15); }
+    }
+
+    // =========================================================================
     // Choreographed Stunts & Animated Gestures
     // =========================================================================
     function playRoutine(name) {
       if (name === 'bow') {
         showToast('🙇 Executing Robot Bow...');
         addTermLog('[ROUTINE] Robot Bow executing');
-        // Tilt hips forward
         setAngle(0, 102); setAngle(4, 86);
         setTimeout(() => {
-          // Return to stand
           setAngle(0, 94); setAngle(4, 94);
           showToast('✓ Bow Complete');
         }, 1400);
       } else if (name === 'kick') {
         showToast('🥋 Executing Martial Arts Kick...');
         addTermLog('[ROUTINE] Martial Arts Kick executing');
-        // Lift right knee and extend hip
         setAngle(0, 98); setAngle(1, 15);
         setTimeout(() => {
           setAngle(0, 94); setAngle(1, 8);
@@ -1338,7 +1469,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       const step = w / (MAX_SCOPE_POINTS - 1);
 
-      // Draw helper for each channel: (val, color, minAngle, maxAngle)
       function plotSeries(key, color, minA, maxA) {
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
@@ -1404,11 +1534,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     // =========================================================================
     const activeKeys = {};
     window.addEventListener('keydown', (e) => {
-      // Don't intercept when user is typing in terminal
       if (document.activeElement && document.activeElement.id === 'term-input') return;
 
       const key = e.key.toLowerCase();
-      if (activeKeys[key]) return; // debounce
+      if (activeKeys[key]) return;
       activeKeys[key] = true;
 
       if (key === 'w' || e.key === 'ArrowUp') {
@@ -1458,7 +1587,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       }
     }
 
-    // HTML5 Gamepad API Poll
     window.addEventListener("gamepadconnected", (e) => {
       const gp = document.getElementById('stat-gamepad');
       if (gp) { gp.innerText = 'CONNECTED (' + e.gamepad.id.substring(0, 12) + ')'; gp.style.color = '#10b981'; }
@@ -1485,6 +1613,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           if (d.angles) {
             for (const ch in d.angles) {
               const val = d.angles[ch];
+              liveAngles[ch] = val;
               updateUI(ch, val);
             }
             // Stream to real-time oscilloscope
@@ -1494,12 +1623,16 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
               d.angles['1'] || 8,
               d.angles['8'] || 94
             );
+            // Animate 2D Robot Movement Rig
+            animateRig(d.angles);
           }
           if (d.active_gait) {
             const ag = document.getElementById('svg-active-gait');
             if (ag) ag.textContent = d.active_gait.toUpperCase();
             const hag = document.getElementById('hud-active-gait');
             if (hag) hag.textContent = d.active_gait.toUpperCase();
+            const sag = document.getElementById('side-gait-status');
+            if (sag) sag.textContent = d.active_gait.toUpperCase();
           }
           if (d.weight_l !== undefined) {
             const wl = Math.round(d.weight_l);
@@ -1563,6 +1696,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     setInterval(pollTelemetry, 350);
     pollTelemetry();
     selectJoint(0, 'Right Hip');
+    animateRig(liveAngles);
   </script>
 </body>
 </html>

@@ -95,10 +95,17 @@ void updateAllJoints(float xr, float zr, float xl, float zl) {
     kneeLiftR = squat;
     kneeLiftL = squat;
   } else {
-    // Knee angle change == Hip angle change ONLY during swing.
-    // Stance leg knee is 100% straight and locked. Both knees NEVER bend at the same time!
-    kneeLiftR = isSwingR ? constrain(fabs(dHipR), 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
-    kneeLiftL = isSwingL ? constrain(fabs(dHipL), 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
+    // Swing Knee Clearance: Smoothly scales with ground clearance lift (peaks at mid-swing).
+    // In stance (isSwing == false), kneeLift is strictly 0.0f, locking the stance leg 100% straight!
+    // Both knees NEVER bend at the same time.
+    float clearR = max(0.0f, stepHeight - zr);
+    float clearL = max(0.0f, stepHeight - zl);
+    float effClear = (stepClearance > 0.05f) ? stepClearance : 0.40f;
+    float liftRatioR = constrain(clearR / effClear, 0.0f, 1.0f);
+    float liftRatioL = constrain(clearL / effClear, 0.0f, 1.0f);
+
+    kneeLiftR = isSwingR ? constrain(liftRatioR * MAX_KNEE_LIFT_DEG, 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
+    kneeLiftL = isSwingL ? constrain(liftRatioL * MAX_KNEE_LIFT_DEG, 0.0f, MAX_KNEE_LIFT_DEG) : 0.0f;
   }
 
   // 1. FIRST: Both Hips (Primary stride motion)
