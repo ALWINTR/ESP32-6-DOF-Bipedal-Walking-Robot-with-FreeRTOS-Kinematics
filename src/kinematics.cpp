@@ -67,7 +67,6 @@ static inline float calculateSwingClearance(float stepPhase, float sClear) {
 }
 
 // =============================================================================
-// =============================================================================
 // 2. Coordinated Joint Actuation Layer (True 6-Joint Dynamic Inverse Kinematics)
 // Drives ALL 6 joints (Hips, Knees, Feet) simultaneously and harmoniously:
 //   - Right Leg: Hip = R_HIP_HOME + dHip,  Knee = R_KNEE_HOME + dKnee,  Foot = R_FOOT_HOME + dAnkle
@@ -150,7 +149,7 @@ void updateLocomotion(float dt) {
   float cosP = cos(phase);
 
   float sLength = stepLength * currentGaitScale;
-  float sClear  = min(0.35f, stepClearance) * currentGaitScale;
+  float sClear  = constrain(stepClearance, 0.15f, 1.20f) * currentGaitScale;
   float sHeight = stepHeight;
 
   float xr = 0.0f;
@@ -196,7 +195,7 @@ void updateLocomotion(float dt) {
     zl = sHeight - liftL;
   }
 
-  // Actuate joints in strict sequence: Hips -> Knees -> Feet
+  // Actuate all 6 joints simultaneously via closed-form Inverse Kinematics
   updateAllJoints(xr, zr, xl, zl);
 
   // Dynamic Ground Reaction Force & Support State Telemetry
@@ -277,7 +276,7 @@ void runJointDiagnostics() {
 
 void takeStep(float sLength, int stepVelocity) {
   int delayMs = (stepVelocity > 0) ? stepVelocity : 20;
-  float sClear = min(0.35f, stepClearance);
+  float sClear = constrain(stepClearance, 0.15f, 1.20f);
 
   // Phase 1: Right Leg stance, Left Leg swing
   for (float i = sLength; i >= -sLength; i -= 0.10f) {
@@ -347,9 +346,9 @@ void setGaitParam(const String& param, float val) {
   if (param == "freq" || param == "speed") {
     walkFreq = constrain(val, 0.3f, 2.0f);
   } else if (param == "stride" || param == "length") {
-    stepLength = constrain(val, 0.5f, 3.5f);
+    stepLength = constrain(val, 0.4f, 2.5f);
   } else if (param == "knee" || param == "clearance" || param == "lift") {
-    stepClearance = constrain(val, 0.2f, 2.0f);
+    stepClearance = constrain(val, 0.15f, 1.20f);
   } else if (param == "height" || param == "stance") {
     stepHeight = constrain(val, 8.5f, MAX_LEG_EXTENSION_CM);
   }
