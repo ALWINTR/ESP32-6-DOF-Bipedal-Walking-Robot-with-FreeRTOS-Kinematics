@@ -118,8 +118,8 @@ const JointConfig DEFAULT_JOINTS[NUM_JOINTS] = {
 
 // Default Walking Parameters for Maximum Stability
 #define DEFAULT_WALK_FREQ_HZ       0.55f  // Stable, judder-free cadence frequency
-#define DEFAULT_STEP_LENGTH_CM     0.80f  // Stable Cartesian stride (keeps CoM within support polygon)
-#define DEFAULT_STEP_CLEARANCE_CM  0.40f  // Ground clearance lift during swing
+#define DEFAULT_STEP_LENGTH_CM     0.90f  // Stable Cartesian stride (keeps CoM within support polygon)
+#define DEFAULT_STEP_CLEARANCE_CM  0.60f  // Ground clearance lift during swing
 #define DEFAULT_STEP_HEIGHT_CM     10.00f // Standing stance height (Z nominal)
 
 #define ROBOT_TOTAL_WEIGHT_GRAMS   500.0f // Nominal robot mass for force estimation

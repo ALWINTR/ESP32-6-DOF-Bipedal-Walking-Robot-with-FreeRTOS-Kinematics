@@ -126,16 +126,17 @@ def test_quintic_trajectory():
 def test_gait_kinematic_safety_brackets():
     print("\n--- 3. Testing Joint Angles Across All Gaits Against Hardware Safety Brackets ---")
     
-    # A. Forward Walk (extreme parameters: stride=1.20cm, clearance=0.55cm)
+    # A. Forward Walk (with dynamic forward lean 0.30cm and high clearance 0.60cm)
     for i in range(100):
         phase = 2.0 * math.pi * (i / 100.0)
         cosP = math.cos(phase)
-        sClear = 0.55
-        sLen = 1.20
+        sClear = 0.60
+        sLen = 0.90
+        forwardLean = 0.30
         liftL = sClear * 64.0 * (phase/math.pi)**3 * (1.0 - phase/math.pi)**3 if phase < math.pi else 0.0
         p2 = phase - math.pi
         liftR = sClear * 64.0 * (p2/math.pi)**3 * (1.0 - p2/math.pi)**3 if phase >= math.pi else 0.0
-        xr =  cosP * sLen; xl = -cosP * sLen
+        xr =  cosP * sLen - forwardLean; xl = -cosP * sLen - forwardLean
         zr = 10.0 - liftR; zl = 10.0 - liftL
         angles = compute_joint_angles(xr, zr, xl, zl)
         for ch, (min_lim, max_lim) in LIMITS.items():

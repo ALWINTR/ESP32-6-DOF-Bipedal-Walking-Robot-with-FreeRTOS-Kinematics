@@ -201,11 +201,12 @@ void updateLocomotion(float dt) {
       return;
     }
 
-    float sClear = constrain(stepClearance, 0.15f, 0.55f);
+    float sClear = constrain(stepClearance, 0.15f, 0.65f);
     float sLen   = constrain(stepLength, 0.40f, 1.20f);
     float xr = 0.0f, xl = 0.0f;
     float zr = stepHeight, zl = stepHeight;
     float liftL = 0.0f, liftR = 0.0f;
+    const float forwardLean = 0.30f;
 
     if (u < 0.5f) {
       // Phase 1: Left leg swings forward (0 -> +sLen); Right leg stance pushes (0 -> -sLen)
@@ -213,8 +214,8 @@ void updateLocomotion(float dt) {
       float e = 6.0f * powf(s, 5) - 15.0f * powf(s, 4) + 10.0f * powf(s, 3);
       float s1 = 1.0f - s;
       liftL = sClear * (64.0f * (s * s * s) * (s1 * s1 * s1));
-      xl = 0.0f + sLen * e;
-      xr = 0.0f - sLen * e;
+      xl = 0.0f + sLen * e - forwardLean;
+      xr = 0.0f - sLen * e - forwardLean;
       zl = stepHeight - liftL;
       zr = stepHeight;
     } else {
@@ -223,8 +224,8 @@ void updateLocomotion(float dt) {
       float e = 6.0f * powf(s, 5) - 15.0f * powf(s, 4) + 10.0f * powf(s, 3);
       float s1 = 1.0f - s;
       liftR = sClear * (64.0f * (s * s * s) * (s1 * s1 * s1));
-      xr = -sLen + sLen * e;
-      xl =  sLen - sLen * e;
+      xr = -sLen + sLen * e - forwardLean;
+      xl =  sLen - sLen * e - forwardLean;
       zr = stepHeight - liftR;
       zl = stepHeight;
     }
@@ -331,7 +332,7 @@ void updateLocomotion(float dt) {
   float cosP = cosf(phase);
 
   float sLength = constrain(stepLength, 0.40f, 1.20f) * sScale;
-  float sClear  = constrain(stepClearance, 0.15f, 0.55f) * sScale;
+  float sClear  = constrain(stepClearance, 0.15f, 0.65f) * sScale;
   float sHeight = stepHeight;
 
   float xr = 0.0f;
@@ -379,8 +380,11 @@ void updateLocomotion(float dt) {
     strncpy(activeGaitBuf, "crouch", sizeof(activeGaitBuf) - 1);
   } else {
     // Default Continuous Forward Dynamic Walk
-    xr =  cosP * sLength;
-    xl = -cosP * sLength;
+    // Dynamic forward lean (3.0mm) shifts CoM ahead of ankle axis,
+    // harnessing gravity for positive forward ground propulsion without slip.
+    const float forwardLean = 0.30f * sScale;
+    xr =  cosP * sLength - forwardLean;
+    xl = -cosP * sLength - forwardLean;
     zr = sHeight - liftR;
     zl = sHeight - liftL;
     strncpy(activeGaitBuf, "walk", sizeof(activeGaitBuf) - 1);
@@ -490,7 +494,7 @@ void setGaitParam(const String& param, float val) {
     } else if (param == "stride" || param == "length") {
       stepLength = constrain(val, 0.40f, 1.20f);
     } else if (param == "knee" || param == "clearance" || param == "lift") {
-      stepClearance = constrain(val, 0.15f, 0.55f);
+      stepClearance = constrain(val, 0.15f, 0.65f);
     } else if (param == "height" || param == "stance") {
       stepHeight = constrain(val, 9.40f, 10.10f);
     }
