@@ -149,15 +149,18 @@ float getJointCurrentAngle(JointID id) {
 }
 
 void setServoAngle(int channel, float angle) {
-  if (!pcaConnected) {
-    if (!initPCA()) return;
-  }
-
   int idx = getJointIndex(channel);
   if (idx != -1) {
     angle = constrain(angle, joints[idx].minLimit, joints[idx].maxLimit);
+    joints[idx].currentAngle = angle;
+    joints[idx].targetAngle  = angle;
   } else {
     angle = constrain(angle, 0.0f, 180.0f);
+  }
+
+  // If PCA9685 hardware is not ready, preserve telemetry state without blocking Core 1
+  if (!pcaConnected) {
+    return;
   }
 
   // Microseconds calculation: 544us to 2400us
@@ -166,10 +169,6 @@ void setServoAngle(int channel, float angle) {
   int pulselen = static_cast<int>(roundf((us * 4096.0f) / 20000.0f));
 
   if (lockI2C(15)) {
-    if (idx != -1) {
-      joints[idx].currentAngle = angle;
-      joints[idx].targetAngle  = angle;
-    }
     // Only perform physical I2C write if pulse width has changed
     if (idx == -1 || joints[idx].lastPulseLen != pulselen) {
       if (idx != -1) joints[idx].lastPulseLen = pulselen;

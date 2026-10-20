@@ -398,8 +398,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <div class="dot-pulse"></div>
           <span id="status-text">ONLINE</span>
         </div>
-        <div class="hud-badge" style="color: var(--accent-sky);">
-          <span>PCA9685: 0x40 (50Hz)</span>
+        <div class="hud-badge" id="hud-pca-badge" style="color: var(--accent-sky);">
+          <span id="hud-pca-status">PCA9685: CHECKING...</span>
         </div>
         <div class="hud-badge" style="color: var(--accent-emerald);">
           <span id="hud-active-gait">STAND</span>
@@ -1673,6 +1673,16 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             if (hag) hag.textContent = d.active_gait.toUpperCase();
             const sag = document.getElementById('side-gait-status');
             if (sag) sag.textContent = d.active_gait.toUpperCase();
+          }
+          if (d.pca_found !== undefined) {
+            const elPca = document.getElementById('hud-pca-status');
+            const elPcaBadge = document.getElementById('hud-pca-badge');
+            if (elPca) {
+              elPca.innerText = d.pca_found ? 'PCA9685: READY (0x40)' : 'PCA9685: OFFLINE';
+            }
+            if (elPcaBadge) {
+              elPcaBadge.style.color = d.pca_found ? 'var(--accent-sky)' : 'var(--accent-rose)';
+            }
           }
           if (d.weight_l !== undefined) {
             const wl = Math.round(d.weight_l);
