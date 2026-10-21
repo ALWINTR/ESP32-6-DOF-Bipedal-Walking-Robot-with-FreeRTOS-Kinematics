@@ -1,0 +1,11 @@
+{
+  "name": "biped-robot",
+  "displayName": "ESP32 6-DOF Bipedal Robot Controller",
+  "version": "1.0.0",
+  "description": "Comprehensive development, kinematics control, FreeRTOS dual-core locomotion, and telemetry toolchain for ESP32 6-DOF bipedal walking robots.",
+  "suggestedPrompts": [
+    "Run 50Hz locomotion diagnostics and inspect joint telemetry",
+    "Calibrate neutral standing baselines and save to NVS flash",
+    "Start dynamic forward walk with inverted pendulum forward lean"
+  ]
+}
