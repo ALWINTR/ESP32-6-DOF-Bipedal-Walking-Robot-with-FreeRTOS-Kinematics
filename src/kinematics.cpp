@@ -105,7 +105,7 @@ void updateServoPos(float dHip, float dKnee, float dAnkle, char leg, bool isSwin
     float homeFoot = getJointHomeAngle(JOINT_L_FOOT);
     setServoAngle(CH_L_HIP,  homeHip  - dHip);
     setServoAngle(CH_L_KNEE, homeKnee - dKnee);
-    setServoAngle(CH_L_FOOT, homeFoot - dAnkle); // Dynamic closed-form ground-parallel sole leveling (|error| < 10^-4 rad)
+    setServoAngle(CH_L_FOOT, homeFoot + dAnkle); // Dynamic ground-parallel leveling; prevents Left Foot from colliding with Left Knee bracket
   } else if (leg == 'r') {
     float homeHip  = getJointHomeAngle(JOINT_R_HIP);
     float homeKnee = getJointHomeAngle(JOINT_R_KNEE);

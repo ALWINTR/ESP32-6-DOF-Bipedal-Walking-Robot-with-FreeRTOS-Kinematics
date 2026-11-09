@@ -800,10 +800,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <span class="telem-angle telem-l" id="track-6">94°</span>
           <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-6" style="background: var(--accent-cyan);"></div></div>
         </div>
-        <div class="telem-card" onclick="selectJoint(8, 'Left Knee')">
-          <span class="telem-name">L.Knee (8)</span>
-          <span class="telem-angle telem-l" id="track-4">98°</span>
-          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-8" style="background: var(--accent-cyan);"></div></div>
+        <div class="telem-card" onclick="selectJoint(4, 'Left Knee')">
+          <span class="telem-name">L.Knee (4)</span>
+          <span class="telem-angle telem-l" id="track-4">94°</span>
+          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-4" style="background: var(--accent-cyan);"></div></div>
         </div>
         <div class="telem-card" onclick="selectJoint(5, 'Left Foot')">
           <span class="telem-name">L.Foot (5)</span>
@@ -920,24 +920,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
       </div>
 
-      <!-- CH 12 -->
-      <div class="servo-card servo-card-r" id="card-12">
+      <!-- CH 2 -->
+      <div class="servo-card servo-card-r" id="card-2">
         <div class="servo-header">
-          <span class="servo-name" style="color: var(--accent-amber);">Right Foot (CH 12)</span>
+          <span class="servo-name" style="color: var(--accent-amber);">Right Foot (CH 2)</span>
           <div class="servo-angle-box">
-            <span class="servo-angle-text" id="angle-12">94°</span>
+            <span class="servo-angle-text" id="angle-2">94°</span>
             <span class="servo-home-tag">(Home: 94°)</span>
           </div>
         </div>
-        <input type="range" class="slider-styled" id="slider-12" min="0" max="180" value="94" oninput="setAngle(12, this.value)" onchange="setAngle(12, this.value)">
+        <input type="range" class="slider-styled" id="slider-2" min="0" max="180" value="94" oninput="setAngle(2, this.value)" onchange="setAngle(2, this.value)">
         <div class="step-btn-group">
-          <button class="step-btn" onclick="stepAngle(12, -10)">-10</button>
-          <button class="step-btn" onclick="stepAngle(12, -5)">-5</button>
-          <button class="step-btn" onclick="stepAngle(12, -1)">-1</button>
-          <button class="step-btn btn-reset-single" onclick="resetSingleJoint(12, 94)">94°</button>
-          <button class="step-btn" onclick="stepAngle(12, 1)">+1</button>
-          <button class="step-btn" onclick="stepAngle(12, 5)">+5</button>
-          <button class="step-btn" onclick="stepAngle(12, 10)">+10</button>
+          <button class="step-btn" onclick="stepAngle(2, -10)">-10</button>
+          <button class="step-btn" onclick="stepAngle(2, -5)">-5</button>
+          <button class="step-btn" onclick="stepAngle(2, -1)">-1</button>
+          <button class="step-btn btn-reset-single" onclick="resetSingleJoint(2, 94)">94°</button>
+          <button class="step-btn" onclick="stepAngle(2, 1)">+1</button>
+          <button class="step-btn" onclick="stepAngle(2, 5)">+5</button>
+          <button class="step-btn" onclick="stepAngle(2, 10)">+10</button>
         </div>
       </div>
     </div>
@@ -945,13 +945,34 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <!-- Left Leg Joint Controls -->
     <div class="leg-section-title leg-l-header">
       <span>LEFT LEG JOINTS (SAGITTAL PLANE - MIRRORED)</span>
-      <span style="font-size: 0.72rem; font-weight: 800;">CH 6: Hip (94°) | CH 4: Knee (98°) | CH 5: Foot (94°)</span>
+      <span style="font-size: 0.72rem; font-weight: 800;">CH 6: Hip (94°) | CH 4: Knee (94°) | CH 5: Foot (94°)</span>
     </div>
     <div class="servo-grid">
+      <!-- CH 6 -->
+      <div class="servo-card" id="card-6">
+        <div class="servo-header">
+          <span class="servo-name" style="color: var(--accent-cyan);">Left Hip (CH 6)</span>
+          <div class="servo-angle-box">
+            <span class="servo-angle-text" id="angle-6">94°</span>
+            <span class="servo-home-tag">(Home: 94°)</span>
+          </div>
+        </div>
+        <input type="range" class="slider-styled" id="slider-6" min="0" max="180" value="94" oninput="setAngle(6, this.value)" onchange="setAngle(6, this.value)">
+        <div class="step-btn-group">
+          <button class="step-btn" onclick="stepAngle(6, -10)">-10</button>
+          <button class="step-btn" onclick="stepAngle(6, -5)">-5</button>
+          <button class="step-btn" onclick="stepAngle(6, -1)">-1</button>
+          <button class="step-btn btn-reset-single" onclick="resetSingleJoint(6, 94)">94°</button>
+          <button class="step-btn" onclick="stepAngle(6, 1)">+1</button>
+          <button class="step-btn" onclick="stepAngle(6, 5)">+5</button>
+          <button class="step-btn" onclick="stepAngle(6, 10)">+10</button>
+        </div>
+      </div>
+
       <!-- CH 4 -->
       <div class="servo-card" id="card-4">
         <div class="servo-header">
-          <span class="servo-name" style="color: var(--accent-cyan);">Left Hip (CH 4)</span>
+          <span class="servo-name" style="color: var(--accent-cyan);">Left Knee (CH 4)</span>
           <div class="servo-angle-box">
             <span class="servo-angle-text" id="angle-4">94°</span>
             <span class="servo-home-tag">(Home: 94°)</span>
@@ -969,45 +990,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
       </div>
 
-      <!-- CH 8 -->
-      <div class="servo-card" id="card-8">
+      <!-- CH 5 -->
+      <div class="servo-card" id="card-5">
         <div class="servo-header">
-          <span class="servo-name" style="color: var(--accent-cyan);">Left Knee (CH 8)</span>
+          <span class="servo-name" style="color: var(--accent-cyan);">Left Foot (CH 5)</span>
           <div class="servo-angle-box">
-            <span class="servo-angle-text" id="angle-8">94°</span>
+            <span class="servo-angle-text" id="angle-5">94°</span>
             <span class="servo-home-tag">(Home: 94°)</span>
           </div>
         </div>
-        <input type="range" class="slider-styled" id="slider-8" min="0" max="180" value="94" oninput="setAngle(8, this.value)" onchange="setAngle(8, this.value)">
+        <input type="range" class="slider-styled" id="slider-5" min="0" max="180" value="94" oninput="setAngle(5, this.value)" onchange="setAngle(5, this.value)">
         <div class="step-btn-group">
-          <button class="step-btn" onclick="stepAngle(8, -10)">-10</button>
-          <button class="step-btn" onclick="stepAngle(8, -5)">-5</button>
-          <button class="step-btn" onclick="stepAngle(8, -1)">-1</button>
-          <button class="step-btn btn-reset-single" onclick="resetSingleJoint(8, 94)">94°</button>
-          <button class="step-btn" onclick="stepAngle(8, 1)">+1</button>
-          <button class="step-btn" onclick="stepAngle(8, 5)">+5</button>
-          <button class="step-btn" onclick="stepAngle(8, 10)">+10</button>
-        </div>
-      </div>
-
-      <!-- CH 15 -->
-      <div class="servo-card" id="card-15">
-        <div class="servo-header">
-          <span class="servo-name" style="color: var(--accent-cyan);">Left Foot (CH 15)</span>
-          <div class="servo-angle-box">
-            <span class="servo-angle-text" id="angle-15">94°</span>
-            <span class="servo-home-tag">(Home: 94°)</span>
-          </div>
-        </div>
-        <input type="range" class="slider-styled" id="slider-15" min="0" max="180" value="94" oninput="setAngle(15, this.value)" onchange="setAngle(15, this.value)">
-        <div class="step-btn-group">
-          <button class="step-btn" onclick="stepAngle(15, -10)">-10</button>
-          <button class="step-btn" onclick="stepAngle(15, -5)">-5</button>
-          <button class="step-btn" onclick="stepAngle(15, -1)">-1</button>
-          <button class="step-btn btn-reset-single" onclick="resetSingleJoint(15, 94)">94°</button>
-          <button class="step-btn" onclick="stepAngle(15, 1)">+1</button>
-          <button class="step-btn" onclick="stepAngle(15, 5)">+5</button>
-          <button class="step-btn" onclick="stepAngle(15, 10)">+10</button>
+          <button class="step-btn" onclick="stepAngle(5, -10)">-10</button>
+          <button class="step-btn" onclick="stepAngle(5, -5)">-5</button>
+          <button class="step-btn" onclick="stepAngle(5, -1)">-1</button>
+          <button class="step-btn btn-reset-single" onclick="resetSingleJoint(5, 94)">94°</button>
+          <button class="step-btn" onclick="stepAngle(5, 1)">+1</button>
+          <button class="step-btn" onclick="stepAngle(5, 5)">+5</button>
+          <button class="step-btn" onclick="stepAngle(5, 10)">+10</button>
         </div>
       </div>
     </div>
@@ -1242,10 +1242,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         angles: {
           ch0_r_hip: parseInt(document.getElementById('slider-0')?.value || 94),
           ch1_r_knee: parseInt(document.getElementById('slider-1')?.value || 8),
-          ch12_r_foot: parseInt(document.getElementById('slider-12')?.value || 94),
-          ch4_l_hip: parseInt(document.getElementById('slider-4')?.value || 94),
-          ch8_l_knee: parseInt(document.getElementById('slider-8')?.value || 94),
-          ch15_l_foot: parseInt(document.getElementById('slider-15')?.value || 94)
+          ch2_r_foot: parseInt(document.getElementById('slider-2')?.value || 94),
+          ch6_l_hip: parseInt(document.getElementById('slider-6')?.value || 94),
+          ch4_l_knee: parseInt(document.getElementById('slider-4')?.value || 94),
+          ch5_l_foot: parseInt(document.getElementById('slider-5')?.value || 94)
         }
       };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profile, null, 2));
@@ -1296,7 +1296,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const rKneeA = angles['1'] !== undefined ? angles['1'] : 8;
       const rFootA = angles['2'] !== undefined ? angles['2'] : 94;
       const lHipA  = angles['6'] !== undefined ? angles['6'] : 94;
-      const lKneeA = angles['4'] !== undefined ? angles['4'] : 98;
+      const lKneeA = angles['4'] !== undefined ? angles['4'] : 94;
       const lFootA = angles['5'] !== undefined ? angles['5'] : 94;
 
       // 1. FRONT VIEW KINEMATIC RIG
@@ -1329,7 +1329,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       // Left Leg Front View
       const dHipL = -(lHipA - 94.0) * (Math.PI / 180);
-      const dKneeL = (98.0 - lKneeA) * (Math.PI / 180);
+      const dKneeL = (94.0 - lKneeA) * (Math.PI / 180);
       const lKneeX = 400 + 95 * Math.sin(dHipL * 0.45);
       const lKneeY = 100 + 95 * Math.cos(dHipL * 0.45);
       const lAnkleX = lKneeX + 105 * Math.sin((dHipL - dKneeL) * 0.45);
@@ -1659,9 +1659,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             // Stream to real-time oscilloscope
             pushScopePoint(
               d.angles['0'] || 94,
-              d.angles['4'] || 94,
+              d.angles['6'] || 94,
               d.angles['1'] || 8,
-              d.angles['8'] || 94
+              d.angles['4'] || 94
             );
             // Animate 2D Robot Movement Rig
             animateRig(d.angles);
