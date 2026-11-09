@@ -117,11 +117,11 @@ const JointConfig DEFAULT_JOINTS[NUM_JOINTS] = {
 #define LINK_SHIN_L2_CM            5.70f  // Shin link length
 #define MAX_LEG_EXTENSION_CM       (LINK_THIGH_L1_CM + LINK_SHIN_L2_CM) // 10.70cm
 
-// Default Walking Parameters for Maximum Stability
-#define DEFAULT_WALK_FREQ_HZ       0.55f  // Stable, judder-free cadence frequency
-#define DEFAULT_STEP_LENGTH_CM     0.90f  // Stable Cartesian stride (keeps CoM within support polygon)
-#define DEFAULT_STEP_CLEARANCE_CM  0.60f  // Ground clearance lift during swing
-#define DEFAULT_STEP_HEIGHT_CM     10.00f // Standing stance height (Z nominal)
+// Default Walking Parameters for Maximum Stability (Anti-Slip & Anti-Tip)
+#define DEFAULT_WALK_FREQ_HZ       1.30f  // Brisk 1.30Hz dynamic cadence (prevents lateral tipping without roll DOF)
+#define DEFAULT_STEP_LENGTH_CM     0.55f  // Compact 5.5mm stride (eliminates ground slipping shear force)
+#define DEFAULT_STEP_CLEARANCE_CM  0.25f  // Low 2.5mm swing lift (skims floor without throwing CoM off balance)
+#define DEFAULT_STEP_HEIGHT_CM     9.80f  // 9.80cm spring stance height (slight knee flex for shock absorption)
 
 #define ROBOT_TOTAL_WEIGHT_GRAMS   500.0f // Nominal robot mass for force estimation
 
