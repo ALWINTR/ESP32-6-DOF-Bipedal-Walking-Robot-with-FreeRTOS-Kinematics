@@ -99,10 +99,7 @@ void setup() {
   // 4. Initialize Kinematics Engine
   initKinematics();
 
-  // 5. Initialize WiFi Station, SoftAP & Embedded Web Server
-  initWebServer();
-
-  // 6. Spawn Dedicated Real-Time Locomotion Task on Core 1
+  // 5. Spawn Dedicated Real-Time Locomotion Task on Core 1 FIRST
   xTaskCreatePinnedToCore(
     locomotionTask,
     "LocomotionTask",
@@ -112,8 +109,11 @@ void setup() {
     NULL,
     1                         // Pinned to Core 1
   );
-
   Serial.println("[SYSTEM] FreeRTOS Locomotion Task started on Core 1 @ 50Hz.");
+
+  // 6. Initialize WiFi Station, SoftAP & Embedded Web Server on Core 0
+  initWebServer();
+
   Serial.println("[SYSTEM] Type 'help' in Serial Monitor for interactive CLI.\n");
 }
 

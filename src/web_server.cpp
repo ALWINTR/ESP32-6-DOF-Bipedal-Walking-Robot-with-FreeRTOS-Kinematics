@@ -188,23 +188,7 @@ void initWebServer() {
     wifiMulti.addAP(KNOWN_NETWORKS[i].ssid, KNOWN_NETWORKS[i].password);
     Serial.printf("[WiFi] Registered network: %s\n", KNOWN_NETWORKS[i].ssid);
   }
-
-  // Quick initial connection attempt (non-blocking: max 1.5s)
-  Serial.println("[WiFi] Quick Station network check...");
-  unsigned long t0 = millis();
-  while (wifiMulti.run() != WL_CONNECTED && millis() - t0 < 1500) {
-    delay(200);
-    Serial.print(".");
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n[WiFi] Station Connected Successfully!");
-    Serial.printf("  Connected SSID: %s\n", WiFi.SSID().c_str());
-    Serial.printf("  Station IP URL: http://%s\n", WiFi.localIP().toString().c_str());
-    Serial.printf("  Gateway:        %s\n", WiFi.gatewayIP().toString().c_str());
-  } else {
-    Serial.println("\n[WiFi] Station connecting in background. SoftAP is active at http://192.168.4.1");
-  }
+  Serial.println("[WiFi] Station connecting in background. SoftAP is active at http://192.168.4.1");
 
   // 4. Start mDNS Responder (http://biped.local)
   if (MDNS.begin(MDNS_HOSTNAME)) {
