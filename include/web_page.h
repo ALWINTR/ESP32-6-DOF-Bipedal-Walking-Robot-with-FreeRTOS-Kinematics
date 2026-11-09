@@ -531,33 +531,33 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <g class="joint-node" id="node-1" onclick="selectJoint(1, 'Right Knee')">
             <circle class="joint-outer" cx="140" cy="200" r="22" fill="#0f172a" stroke="#f59e0b" stroke-width="2.5" filter="url(#glow-amber)" />
             <text x="140" y="196" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="800">CH 1</text>
-            <text id="svg-angle-1" x="140" y="210" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">8°</text>
+            <text id="svg-angle-1" x="140" y="210" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">98°</text>
             <text x="80" y="204" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700">R.KNEE</text>
           </g>
-          <g class="joint-node" id="node-12" onclick="selectJoint(12, 'Right Foot')">
+          <g class="joint-node" id="node-2" onclick="selectJoint(2, 'Right Foot')">
             <circle class="joint-outer" cx="140" cy="300" r="22" fill="#0f172a" stroke="#f59e0b" stroke-width="2.5" filter="url(#glow-amber)" />
-            <text x="140" y="296" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="800">CH 12</text>
-            <text id="svg-angle-12" x="140" y="310" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
+            <text x="140" y="296" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="800">CH 2</text>
+            <text id="svg-angle-2" x="140" y="310" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
             <text x="80" y="304" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700">R.FOOT</text>
           </g>
 
           <!-- Joint Nodes (Left Leg) -->
-          <g class="joint-node" id="node-4" onclick="selectJoint(4, 'Left Hip')">
+          <g class="joint-node" id="node-6" onclick="selectJoint(6, 'Left Hip')">
             <circle class="joint-outer" cx="400" cy="100" r="22" fill="#0f172a" stroke="#06b6d4" stroke-width="2.5" filter="url(#glow-cyan)" />
-            <text x="400" y="96" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="800">CH 4</text>
-            <text id="svg-angle-4" x="400" y="110" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
+            <text x="400" y="96" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="800">CH 6</text>
+            <text id="svg-angle-6" x="400" y="110" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
             <text x="460" y="104" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">L.HIP</text>
           </g>
-          <g class="joint-node" id="node-8" onclick="selectJoint(8, 'Left Knee')">
+          <g class="joint-node" id="node-4" onclick="selectJoint(4, 'Left Knee')">
             <circle class="joint-outer" cx="400" cy="200" r="22" fill="#0f172a" stroke="#06b6d4" stroke-width="2.5" filter="url(#glow-cyan)" />
-            <text x="400" y="196" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="800">CH 8</text>
-            <text id="svg-angle-8" x="400" y="210" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
+            <text x="400" y="196" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="800">CH 4</text>
+            <text id="svg-angle-4" x="400" y="210" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">98°</text>
             <text x="460" y="204" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">L.KNEE</text>
           </g>
-          <g class="joint-node" id="node-15" onclick="selectJoint(15, 'Left Foot')">
+          <g class="joint-node" id="node-5" onclick="selectJoint(5, 'Left Foot')">
             <circle class="joint-outer" cx="400" cy="300" r="22" fill="#0f172a" stroke="#06b6d4" stroke-width="2.5" filter="url(#glow-cyan)" />
-            <text x="400" y="296" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="800">CH 15</text>
-            <text id="svg-angle-15" x="400" y="310" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
+            <text x="400" y="296" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="800">CH 5</text>
+            <text id="svg-angle-5" x="400" y="310" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">94°</text>
             <text x="460" y="304" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">L.FOOT</text>
           </g>
 
@@ -591,7 +591,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <line id="side-shin-l" x1="270" y1="190" x2="270" y2="310" stroke="#06b6d4" stroke-width="7" stroke-linecap="round" />
           <circle id="side-ankle-l" cx="270" cy="310" r="7" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
           <rect id="side-foot-l" x="238" y="316" width="64" height="14" rx="4" fill="#06b6d4" opacity="0.9" />
-          <text id="side-foot-text-l" x="270" y="327" text-anchor="middle" fill="#000" font-size="8" font-weight="900">L.FOOT (CH15)</text>
+          <text id="side-foot-text-l" x="270" y="327" text-anchor="middle" fill="#000" font-size="8" font-weight="900">L.FOOT (CH5)</text>
 
           <!-- Right Leg (Amber Foreground Layer) -->
           <line id="side-thigh-r" x1="270" y1="80" x2="270" y2="190" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" />
@@ -599,7 +599,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <line id="side-shin-r" x1="270" y1="190" x2="270" y2="310" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" />
           <circle id="side-ankle-r" cx="270" cy="310" r="7" fill="#0f172a" stroke="#f59e0b" stroke-width="2" />
           <rect id="side-foot-r" x="238" y="316" width="64" height="14" rx="4" fill="#f59e0b" opacity="0.95" />
-          <text id="side-foot-text-r" x="270" y="327" text-anchor="middle" fill="#000" font-size="8" font-weight="900">R.FOOT (CH12)</text>
+          <text id="side-foot-text-r" x="270" y="327" text-anchor="middle" fill="#000" font-size="8" font-weight="900">R.FOOT (CH2)</text>
 
           <!-- Gait Status Badge in Side View -->
           <rect x="390" y="20" width="125" height="55" rx="6" fill="rgba(15,23,42,0.85)" stroke="rgba(255,255,255,0.12)" />
@@ -634,10 +634,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
           <g><path d="M 370 100 L 415 100" stroke="#f59e0b" stroke-width="2" /><rect x="415" y="90" width="100" height="22" rx="4" fill="#1e293b" stroke="#f59e0b" /><text x="465" y="104" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="800">CH 0: Right Hip</text></g>
           <g><path d="M 370 135 L 415 135" stroke="#f59e0b" stroke-width="2" /><rect x="415" y="125" width="100" height="22" rx="4" fill="#1e293b" stroke="#f59e0b" /><text x="465" y="139" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="800">CH 1: Right Knee</text></g>
-          <g><path d="M 370 170 L 415 170" stroke="#f59e0b" stroke-width="2" /><rect x="415" y="160" width="100" height="22" rx="4" fill="#1e293b" stroke="#f59e0b" /><text x="465" y="174" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="800">CH 12: Right Foot</text></g>
-          <g><path d="M 370 215 L 415 215" stroke="#06b6d4" stroke-width="2" /><rect x="415" y="205" width="100" height="22" rx="4" fill="#1e293b" stroke="#06b6d4" /><text x="465" y="219" text-anchor="middle" fill="#67e8f9" font-size="8" font-weight="800">CH 4: Left Hip</text></g>
-          <g><path d="M 370 250 L 415 250" stroke="#06b6d4" stroke-width="2" /><rect x="415" y="240" width="100" height="22" rx="4" fill="#1e293b" stroke="#06b6d4" /><text x="465" y="254" text-anchor="middle" fill="#67e8f9" font-size="8" font-weight="800">CH 8: Left Knee</text></g>
-          <g><path d="M 370 285 L 415 285" stroke="#06b6d4" stroke-width="2" /><rect x="415" y="275" width="100" height="22" rx="4" fill="#1e293b" stroke="#06b6d4" /><text x="465" y="289" text-anchor="middle" fill="#67e8f9" font-size="8" font-weight="800">CH 15: Left Foot</text></g>
+          <g><path d="M 370 170 L 415 170" stroke="#f59e0b" stroke-width="2" /><rect x="415" y="160" width="100" height="22" rx="4" fill="#1e293b" stroke="#f59e0b" /><text x="465" y="174" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="800">CH 2: Right Foot</text></g>
+          <g><path d="M 370 215 L 415 215" stroke="#06b6d4" stroke-width="2" /><rect x="415" y="205" width="100" height="22" rx="4" fill="#1e293b" stroke="#06b6d4" /><text x="465" y="219" text-anchor="middle" fill="#67e8f9" font-size="8" font-weight="800">CH 6: Left Hip</text></g>
+          <g><path d="M 370 250 L 415 250" stroke="#06b6d4" stroke-width="2" /><rect x="415" y="240" width="100" height="22" rx="4" fill="#1e293b" stroke="#06b6d4" /><text x="465" y="254" text-anchor="middle" fill="#67e8f9" font-size="8" font-weight="800">CH 4: Left Knee</text></g>
+          <g><path d="M 370 285 L 415 285" stroke="#06b6d4" stroke-width="2" /><rect x="415" y="275" width="100" height="22" rx="4" fill="#1e293b" stroke="#06b6d4" /><text x="465" y="289" text-anchor="middle" fill="#67e8f9" font-size="8" font-weight="800">CH 5: Left Foot</text></g>
         </svg>
 
         <!-- Quick Nudge Toolbar -->
@@ -787,28 +787,28 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
         <div class="telem-card" onclick="selectJoint(1, 'Right Knee')">
           <span class="telem-name">R.Knee (1)</span>
-          <span class="telem-angle telem-r" id="track-1">8°</span>
+          <span class="telem-angle telem-r" id="track-1">98°</span>
           <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-1" style="background: var(--accent-amber);"></div></div>
         </div>
-        <div class="telem-card" onclick="selectJoint(12, 'Right Foot')">
-          <span class="telem-name">R.Foot (12)</span>
-          <span class="telem-angle telem-r" id="track-12">94°</span>
-          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-12" style="background: var(--accent-amber);"></div></div>
+        <div class="telem-card" onclick="selectJoint(2, 'Right Foot')">
+          <span class="telem-name">R.Foot (2)</span>
+          <span class="telem-angle telem-r" id="track-2">94°</span>
+          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-2" style="background: var(--accent-amber);"></div></div>
         </div>
-        <div class="telem-card" onclick="selectJoint(4, 'Left Hip')">
-          <span class="telem-name">L.Hip (4)</span>
-          <span class="telem-angle telem-l" id="track-4">94°</span>
-          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-4" style="background: var(--accent-cyan);"></div></div>
+        <div class="telem-card" onclick="selectJoint(6, 'Left Hip')">
+          <span class="telem-name">L.Hip (6)</span>
+          <span class="telem-angle telem-l" id="track-6">94°</span>
+          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-6" style="background: var(--accent-cyan);"></div></div>
         </div>
         <div class="telem-card" onclick="selectJoint(8, 'Left Knee')">
           <span class="telem-name">L.Knee (8)</span>
-          <span class="telem-angle telem-l" id="track-8">94°</span>
+          <span class="telem-angle telem-l" id="track-4">98°</span>
           <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-8" style="background: var(--accent-cyan);"></div></div>
         </div>
-        <div class="telem-card" onclick="selectJoint(15, 'Left Foot')">
-          <span class="telem-name">L.Foot (15)</span>
-          <span class="telem-angle telem-l" id="track-15">94°</span>
-          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-15" style="background: var(--accent-cyan);"></div></div>
+        <div class="telem-card" onclick="selectJoint(5, 'Left Foot')">
+          <span class="telem-name">L.Foot (5)</span>
+          <span class="telem-angle telem-l" id="track-5">94°</span>
+          <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-5" style="background: var(--accent-cyan);"></div></div>
         </div>
       </div>
     </section>
@@ -875,7 +875,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <!-- Right Leg Joint Controls -->
     <div class="leg-section-title leg-r-header">
       <span>RIGHT LEG JOINTS (SAGITTAL PLANE)</span>
-      <span style="font-size: 0.72rem; font-weight: 800;">CH 0: Hip (94°) | CH 1: Knee (8°) | CH 12: Foot (94°)</span>
+      <span style="font-size: 0.72rem; font-weight: 800;">CH 0: Hip (94°) | CH 1: Knee (98°) | CH 2: Foot (94°)</span>
     </div>
     <div class="servo-grid">
       <!-- CH 0 -->
@@ -945,7 +945,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <!-- Left Leg Joint Controls -->
     <div class="leg-section-title leg-l-header">
       <span>LEFT LEG JOINTS (SAGITTAL PLANE - MIRRORED)</span>
-      <span style="font-size: 0.72rem; font-weight: 800;">CH 4: Hip (94°) | CH 8: Knee (94°) | CH 15: Foot (94°)</span>
+      <span style="font-size: 0.72rem; font-weight: 800;">CH 6: Hip (94°) | CH 4: Knee (98°) | CH 5: Foot (94°)</span>
     </div>
     <div class="servo-grid">
       <!-- CH 4 -->
@@ -1292,17 +1292,17 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     function animateRig(angles) {
-      const rHipA  = angles['0']  !== undefined ? angles['0']  : 94;
-      const rKneeA = angles['1']  !== undefined ? angles['1']  : 8;
-      const rFootA = angles['12'] !== undefined ? angles['12'] : 94;
-      const lHipA  = angles['4']  !== undefined ? angles['4']  : 94;
-      const lKneeA = angles['8']  !== undefined ? angles['8']  : 94;
-      const lFootA = angles['15'] !== undefined ? angles['15'] : 94;
+      const rHipA  = angles['0'] !== undefined ? angles['0'] : 94;
+      const rKneeA = angles['1'] !== undefined ? angles['1'] : 98;
+      const rFootA = angles['2'] !== undefined ? angles['2'] : 94;
+      const lHipA  = angles['6'] !== undefined ? angles['6'] : 94;
+      const lKneeA = angles['4'] !== undefined ? angles['4'] : 98;
+      const lFootA = angles['5'] !== undefined ? angles['5'] : 94;
 
       // 1. FRONT VIEW KINEMATIC RIG
       // Right Leg Front View
       const dHipR = (rHipA - 94.0) * (Math.PI / 180);
-      const dKneeR = (rKneeA - 8.0) * (Math.PI / 180);
+      const dKneeR = (rKneeA - 98.0) * (Math.PI / 180);
       const rKneeX = 140 + 95 * Math.sin(dHipR * 0.45);
       const rKneeY = 100 + 95 * Math.cos(dHipR * 0.45);
       const rAnkleX = rKneeX + 105 * Math.sin((dHipR - dKneeR) * 0.45);
@@ -1312,8 +1312,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       setLine('link-shin-r', rKneeX, rKneeY, rAnkleX, rAnkleY);
       const node1 = document.getElementById('node-1');
       if (node1) node1.setAttribute('transform', `translate(${rKneeX - 140}, ${rKneeY - 200})`);
-      const node12 = document.getElementById('node-12');
-      if (node12) node12.setAttribute('transform', `translate(${rAnkleX - 140}, ${rAnkleY - 300})`);
+      const node2 = document.getElementById('node-2');
+      if (node2) node2.setAttribute('transform', `translate(${rAnkleX - 140}, ${rAnkleY - 300})`);
       const footPlateR = document.getElementById('plate-foot-r');
       if (footPlateR) { 
         footPlateR.setAttribute('x', rAnkleX - 35); 
@@ -1329,7 +1329,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       // Left Leg Front View
       const dHipL = -(lHipA - 94.0) * (Math.PI / 180);
-      const dKneeL = (94.0 - lKneeA) * (Math.PI / 180);
+      const dKneeL = (98.0 - lKneeA) * (Math.PI / 180);
       const lKneeX = 400 + 95 * Math.sin(dHipL * 0.45);
       const lKneeY = 100 + 95 * Math.cos(dHipL * 0.45);
       const lAnkleX = lKneeX + 105 * Math.sin((dHipL - dKneeL) * 0.45);
@@ -1337,10 +1337,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       setLine('link-thigh-l', 400, 100, lKneeX, lKneeY);
       setLine('link-shin-l', lKneeX, lKneeY, lAnkleX, lAnkleY);
-      const node8 = document.getElementById('node-8');
-      if (node8) node8.setAttribute('transform', `translate(${lKneeX - 400}, ${lKneeY - 200})`);
-      const node15 = document.getElementById('node-15');
-      if (node15) node15.setAttribute('transform', `translate(${lAnkleX - 400}, ${lAnkleY - 300})`);
+      const node4 = document.getElementById('node-4');
+      if (node4) node4.setAttribute('transform', `translate(${lKneeX - 400}, ${lKneeY - 200})`);
+      const node5 = document.getElementById('node-5');
+      if (node5) node5.setAttribute('transform', `translate(${lAnkleX - 400}, ${lAnkleY - 300})`);
       const footPlateL = document.getElementById('plate-foot-l');
       if (footPlateL) { 
         footPlateL.setAttribute('x', lAnkleX - 35); 
@@ -1360,7 +1360,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       // Right Leg Side Profile:
       const radHipR = -(rHipA - 94.0) * (Math.PI / 180) * 1.8;
-      const radKneeR = (rKneeA - 8.0) * (Math.PI / 180) * 2.2;
+      const radKneeR = (rKneeA - 98.0) * (Math.PI / 180) * 2.2;
       const skR_x = hipX + L1 * Math.sin(radHipR);
       const skR_y = hipY + L1 * Math.cos(radHipR);
       const saR_x = skR_x + L2 * Math.sin(radHipR - radKneeR);
@@ -1387,7 +1387,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       // Left Leg Side Profile:
       const radHipL = (lHipA - 94.0) * (Math.PI / 180) * 1.8;
-      const radKneeL = (94.0 - lKneeA) * (Math.PI / 180) * 2.2;
+      const radKneeL = (98.0 - lKneeA) * (Math.PI / 180) * 2.2;
       const skL_x = hipX + L1 * Math.sin(radHipL);
       const skL_y = hipY + L1 * Math.cos(radHipL);
       const saL_x = skL_x + L2 * Math.sin(radHipL - radKneeL);
@@ -1598,7 +1598,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       } else if (key === 't') {
         runGait('test');
       } else if (key >= '1' && key <= '6') {
-        const chMap = ['0', '1', '12', '4', '8', '15'];
+        const chMap = ['0', '1', '2', '6', '4', '5'];
         const names = ['Right Hip', 'Right Knee', 'Right Foot', 'Left Hip', 'Left Knee', 'Left Foot'];
         const idx = parseInt(key) - 1;
         selectJoint(parseInt(chMap[idx]), names[idx]);

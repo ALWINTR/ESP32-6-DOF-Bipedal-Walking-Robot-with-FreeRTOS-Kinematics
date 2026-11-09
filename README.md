@@ -48,9 +48,9 @@ Designed and validated on physical hardware, this robotics architecture implemen
            |                                                      |
            | Right Leg Channels                                   | Left Leg Channels
            +-----------------------------+                        +-----------------------------+
-           | Channel 0:  Right Hip       |                        | Channel 4:  Left Hip        |
-           | Channel 1:  Right Knee      |                        | Channel 8:  Left Knee       |
-           | Channel 12: Right Ankle/Foot|                        | Channel 15: Left Ankle/Foot |
+           | Channel 0:  Right Hip       |                        | Channel 6:  Left Hip        |
+           | Channel 1:  Right Knee      |                        | Channel 4:  Left Knee       |
+           | Channel 2:  Right Ankle/Foot|                        | Channel 5:  Left Ankle/Foot |
            +-----------------------------+                        +-----------------------------+
                          |                                                      |
                          v                                                      v
@@ -80,10 +80,10 @@ Designed and validated on physical hardware, this robotics architecture implemen
 | **I2C Serial Clock** | `GPIO 22` | `SCL` | I2C Clock at 400kHz Fast Mode |
 | **Right Hip Actuator** | — | `Channel 0 PWM` | Right Hip Pitch Servo Signal |
 | **Right Knee Actuator** | — | `Channel 1 PWM` | Right Knee Pitch Servo Signal |
-| **Right Foot/Ankle Actuator** | — | `Channel 12 PWM` | Right Ankle Ground Alignment Signal |
-| **Left Hip Actuator** | — | `Channel 4 PWM` | Left Hip Pitch Servo Signal |
-| **Left Knee Actuator** | — | `Channel 8 PWM` | Left Knee Pitch Servo Signal |
-| **Left Foot/Ankle Actuator** | — | `Channel 15 PWM` | Left Ankle Ground Alignment Signal |
+| **Right Foot/Ankle Actuator** | — | `Channel 2 PWM` | Right Ankle Ground Alignment Signal |
+| **Left Hip Actuator** | — | `Channel 6 PWM` | Left Hip Pitch Servo Signal |
+| **Left Knee Actuator** | — | `Channel 4 PWM` | Left Knee Pitch Servo Signal |
+| **Left Foot/Ankle Actuator** | — | `Channel 5 PWM` | Left Ankle Ground Alignment Signal |
 | **Common Ground** | `GND` | `GND` | Shared reference between ESP32 and 6V UBEC |
 
 ---
@@ -120,8 +120,8 @@ Designed and validated on physical hardware, this robotics architecture implemen
 - Step Length: $0.40\,\text{cm} \le s_{\text{length}} \le 1.20\,\text{cm}$ (default: $0.90\,\text{cm}$)
 - Step Clearance: $0.15\,\text{cm} \le s_{\text{clear}} \le 0.65\,\text{cm}$ (default: $0.60\,\text{cm}$)
 - Stance Height: $9.40\,\text{cm} \le s_{\text{height}} \le 10.10\,\text{cm}$ (default: $10.00\,\text{cm}$)
-- Right Knee physical bracket limit: $5^\circ$ to $28^\circ$ (home: $8^\circ$).
-- Left Knee physical bracket limit: $74^\circ$ to $97^\circ$ (home: $94^\circ$).
+- Right Knee safety bracket: $85^\circ$ to $120^\circ$ (home: $98^\circ$).
+- Left Knee safety bracket: $80^\circ$ to $115^\circ$ (home: $98^\circ$).
 
 ---
 
@@ -155,8 +155,8 @@ ESP32-6-DOF-Bipedal-Walking-Robot-with-FreeRTOS-Kinematics/
 2. Connect the UBEC Ground to both the PCA9685 `GND` and the ESP32 `GND` (common reference).
 3. Connect ESP32 `GPIO 21` to PCA9685 `SDA`, and `GPIO 22` to PCA9685 `SCL`.
 4. Plug servos into PCA9685:
-   - Right Leg: Hip `Ch 0`, Knee `Ch 1`, Foot `Ch 12`
-   - Left Leg: Hip `Ch 4`, Knee `Ch 8`, Foot `Ch 15`
+   - Right Leg: Hip `Ch 0`, Knee `Ch 1`, Foot `Ch 2`
+   - Left Leg: Hip `Ch 6`, Knee `Ch 4`, Foot `Ch 5`
 
 ### 2. Compilation with PlatformIO
 ```bash
