@@ -531,7 +531,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <g class="joint-node" id="node-1" onclick="selectJoint(1, 'Right Knee')">
             <circle class="joint-outer" cx="140" cy="200" r="22" fill="#0f172a" stroke="#f59e0b" stroke-width="2.5" filter="url(#glow-amber)" />
             <text x="140" y="196" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="800">CH 1</text>
-            <text id="svg-angle-1" x="140" y="210" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">98°</text>
+            <text id="svg-angle-1" x="140" y="210" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">8°</text>
             <text x="80" y="204" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700">R.KNEE</text>
           </g>
           <g class="joint-node" id="node-2" onclick="selectJoint(2, 'Right Foot')">
@@ -787,7 +787,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
         <div class="telem-card" onclick="selectJoint(1, 'Right Knee')">
           <span class="telem-name">R.Knee (1)</span>
-          <span class="telem-angle telem-r" id="track-1">98°</span>
+          <span class="telem-angle telem-r" id="track-1">8°</span>
           <div class="telem-bar-track"><div class="telem-bar-fill" id="bar-1" style="background: var(--accent-amber);"></div></div>
         </div>
         <div class="telem-card" onclick="selectJoint(2, 'Right Foot')">
@@ -875,7 +875,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <!-- Right Leg Joint Controls -->
     <div class="leg-section-title leg-r-header">
       <span>RIGHT LEG JOINTS (SAGITTAL PLANE)</span>
-      <span style="font-size: 0.72rem; font-weight: 800;">CH 0: Hip (94°) | CH 1: Knee (98°) | CH 2: Foot (94°)</span>
+      <span style="font-size: 0.72rem; font-weight: 800;">CH 0: Hip (94°) | CH 1: Knee (8°) | CH 2: Foot (94°)</span>
     </div>
     <div class="servo-grid">
       <!-- CH 0 -->
@@ -1293,7 +1293,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     function animateRig(angles) {
       const rHipA  = angles['0'] !== undefined ? angles['0'] : 94;
-      const rKneeA = angles['1'] !== undefined ? angles['1'] : 98;
+      const rKneeA = angles['1'] !== undefined ? angles['1'] : 8;
       const rFootA = angles['2'] !== undefined ? angles['2'] : 94;
       const lHipA  = angles['6'] !== undefined ? angles['6'] : 94;
       const lKneeA = angles['4'] !== undefined ? angles['4'] : 98;
@@ -1302,7 +1302,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       // 1. FRONT VIEW KINEMATIC RIG
       // Right Leg Front View
       const dHipR = (rHipA - 94.0) * (Math.PI / 180);
-      const dKneeR = (rKneeA - 98.0) * (Math.PI / 180);
+      const dKneeR = (rKneeA - 8.0) * (Math.PI / 180);
       const rKneeX = 140 + 95 * Math.sin(dHipR * 0.45);
       const rKneeY = 100 + 95 * Math.cos(dHipR * 0.45);
       const rAnkleX = rKneeX + 105 * Math.sin((dHipR - dKneeR) * 0.45);
@@ -1360,7 +1360,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       // Right Leg Side Profile:
       const radHipR = -(rHipA - 94.0) * (Math.PI / 180) * 1.8;
-      const radKneeR = (rKneeA - 98.0) * (Math.PI / 180) * 2.2;
+      const radKneeR = (rKneeA - 8.0) * (Math.PI / 180) * 2.2;
       const skR_x = hipX + L1 * Math.sin(radHipR);
       const skR_y = hipY + L1 * Math.cos(radHipR);
       const saR_x = skR_x + L2 * Math.sin(radHipR - radKneeR);
