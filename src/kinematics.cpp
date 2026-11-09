@@ -83,13 +83,13 @@ IKResult solveIK(float x, float z) {
   return res;
 }
 
-// C2-Continuous Zero-Jerk Quintic Swing Lift
-// Both velocity and acceleration are strictly zero at liftoff and touchdown.
+// Rapid Lift Swing Clearance:
+// Uses sin(u * pi)^0.6 to get the foot 3.5mm off the floor in the first 10% of phase,
+// completely preventing floor scraping caused by 3D-print bracket flex.
 static inline float calculateSwingClearance(float stepPhase, float sClear) {
   float u = constrain(stepPhase / (float)M_PI, 0.0f, 1.0f);
-  float u1 = 1.0f - u;
-  // Quintic polynomial bell curve: 64 * u^3 * (1 - u)^3 has peak = 1.0 at u = 0.5
-  return sClear * (64.0f * (u * u * u) * (u1 * u1 * u1));
+  if (u <= 0.0f || u >= 1.0f) return 0.0f;
+  return sClear * powf(sinf(u * (float)M_PI), 0.60f);
 }
 
 // =============================================================================
@@ -212,8 +212,7 @@ void updateLocomotion(float dt) {
       // Phase 1: Left leg swings forward (0 -> +sLen); Right leg stance pushes (0 -> -sLen)
       float s = u / 0.5f;
       float e = 6.0f * powf(s, 5) - 15.0f * powf(s, 4) + 10.0f * powf(s, 3);
-      float s1 = 1.0f - s;
-      liftL = sClear * (64.0f * (s * s * s) * (s1 * s1 * s1));
+      liftL = sClear * powf(sinf(s * (float)M_PI), 0.60f);
       xl = 0.0f + sLen * e - forwardLean;
       xr = 0.0f - sLen * e - forwardLean;
       zl = stepHeight - liftL;
@@ -222,8 +221,7 @@ void updateLocomotion(float dt) {
       // Phase 2: Right leg swings forward (-sLen -> 0); Left leg stance pushes (+sLen -> 0)
       float s = (u - 0.5f) / 0.5f;
       float e = 6.0f * powf(s, 5) - 15.0f * powf(s, 4) + 10.0f * powf(s, 3);
-      float s1 = 1.0f - s;
-      liftR = sClear * (64.0f * (s * s * s) * (s1 * s1 * s1));
+      liftR = sClear * powf(sinf(s * (float)M_PI), 0.60f);
       xr = -sLen + sLen * e - forwardLean;
       xl =  sLen - sLen * e - forwardLean;
       zr = stepHeight - liftR;
