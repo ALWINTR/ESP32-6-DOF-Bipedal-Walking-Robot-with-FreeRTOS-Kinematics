@@ -15,6 +15,7 @@ struct WiFiCredential {
 //   Priority #1: Primary Subnet (192.168.0.x)
 //   Priority #2: Secondary Subnet (192.168.1.x)
 const WiFiCredential KNOWN_NETWORKS[] = {
+  {"Tenda_24CF50",            "mathaelectronics@9961"},
   {"MATHA ELECTRONICS_ Dwan", "qwerty09"},
   {"MATHA BSNL FTTH",          "qwerty09"}
 };
