@@ -21,19 +21,12 @@ static SemaphoreHandle_t i2cMutex = NULL;
 // NVS Persistent Storage Keys corresponding to JointID enum order
 
 static const char* NVS_KEYS[NUM_JOINTS] = {
-
   "ch0",  // JOINT_R_HIP
-
   "ch1",  // JOINT_R_KNEE
-
-  "ch2",  // JOINT_R_FOOT
-
-  "ch6",  // JOINT_L_HIP
-
-  "ch4",  // JOINT_L_KNEE
-
-  "ch5"   // JOINT_L_FOOT
-
+  "ch12", // JOINT_R_FOOT
+  "ch4",  // JOINT_L_HIP
+  "ch8",  // JOINT_L_KNEE
+  "ch15"  // JOINT_L_FOOT
 };
 
 
@@ -450,7 +443,7 @@ void loadNVSJointOffsets() {
 
   // 2. Load stored calibrations from NVS flash if present
 
-  prefs.begin("biped_chmap_v3", true); // read-only
+  prefs.begin("biped_chmap_v5", true); // read-only
 
   if (prefs.isKey("ch0")) {
 
@@ -482,7 +475,7 @@ void loadNVSJointOffsets() {
 
 void saveNVSJointOffsets() {
 
-  prefs.begin("biped_chmap_v3", false); // read-write
+  prefs.begin("biped_chmap_v5", false); // read-write
 
   for (int i = 0; i < NUM_JOINTS; i++) {
 
@@ -502,7 +495,7 @@ void saveNVSJointOffsets() {
 
 void resetNVSJointOffsets() {
 
-  prefs.begin("biped_chmap_v3", false);
+  prefs.begin("biped_chmap_v5", false);
 
   prefs.clear();
 

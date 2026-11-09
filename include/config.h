@@ -52,13 +52,13 @@ JOINT_L_FOOT = 5,
 NUM_JOINTS   = 6
 };
 #define NUM_SERVOS NUM_JOINTS // Backward compatibility alias
-// PCA9685 Physical Channel Mappings (Right: CH 0, 1, 2 | Left: CH 6, 4, 5)
+// PCA9685 Physical Channel Mappings (Default Started Today: Right [0, 1, 12] | Left [4, 8, 15])
 #define CH_R_HIP   0
 #define CH_R_KNEE  1
-#define CH_R_FOOT  2
-#define CH_L_HIP   6
-#define CH_L_KNEE  4
-#define CH_L_FOOT  5
+#define CH_R_FOOT  12
+#define CH_L_HIP   4
+#define CH_L_KNEE  8
+#define CH_L_FOOT  15
 // Right Leg Neutral Baselines & Safety Bracket Limits
 #define R_HIP_HOME         94.0f
 #define R_HIP_MIN          80.0f
@@ -91,10 +91,10 @@ float maxLimit;
 const JointConfig DEFAULT_JOINTS[NUM_JOINTS] = {
 {CH_R_HIP,  "Right Hip",  R_HIP_HOME,  R_HIP_MIN,  R_HIP_MAX},  // Index 0: CH 0
 {CH_R_KNEE, "Right Knee", R_KNEE_HOME, R_KNEE_MIN, R_KNEE_MAX}, // Index 1: CH 1
-{CH_R_FOOT, "Right Foot", R_FOOT_HOME, R_FOOT_MIN, R_FOOT_MAX}, // Index 2: CH 2
-{CH_L_HIP,  "Left Hip",   L_HIP_HOME,  L_HIP_MIN,  L_HIP_MAX},  // Index 3: CH 6
-{CH_L_KNEE, "Left Knee",  L_KNEE_HOME, L_KNEE_MIN, L_KNEE_MAX}, // Index 4: CH 4
-{CH_L_FOOT, "Left Foot",  L_FOOT_HOME, L_FOOT_MIN, L_FOOT_MAX}  // Index 5: CH 5
+{CH_R_FOOT, "Right Foot", R_FOOT_HOME, R_FOOT_MIN, R_FOOT_MAX}, // Index 2: CH 12
+{CH_L_HIP,  "Left Hip",   L_HIP_HOME,  L_HIP_MIN,  L_HIP_MAX},  // Index 3: CH 4
+{CH_L_KNEE, "Left Knee",  L_KNEE_HOME, L_KNEE_MIN, L_KNEE_MAX}, // Index 4: CH 8
+{CH_L_FOOT, "Left Foot",  L_FOOT_HOME, L_FOOT_MIN, L_FOOT_MAX}  // Index 5: CH 15
 };
 
 // =============================================================================
